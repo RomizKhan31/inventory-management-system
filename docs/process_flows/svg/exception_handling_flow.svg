@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 780" width="1100" height="780">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12" flood-color="#000000"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748B"/>
+    </marker>
+    <marker id="arrow-err" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#D32F2F"/>
+    </marker>
+    <marker id="arrow-succ" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2E7D32"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#F8FAFC"/>
+  <rect x="0" y="0" width="1100" height="64" fill="#0F172A"/>
+  <text x="24" y="30" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">8. Comprehensive Exception Handling & Error Resolution Matrix Flow</text>
+  <text x="24" y="50" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="500" fill="#94A3B8">Actor / Role: <tspan fill="#38BDF8" font-weight="700">System-Wide Guardrails</tspan> | Industrial Manufacturing Inventory Management System</text>
+
+  <g transform="translate(460, 20)">
+    <rect x="0" y="0" width="12" height="12" rx="3" fill="#0288D1"/>
+    <text x="18" y="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#E2E8F0">User Action</text>
+
+    <rect x="95" y="0" width="12" height="12" rx="3" fill="#FFA000"/>
+    <text x="113" y="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#E2E8F0">Validation</text>
+
+    <rect x="185" y="0" width="12" height="12" rx="3" fill="#7E57C2"/>
+    <text x="203" y="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#E2E8F0">Database Op</text>
+
+    <rect x="290" y="0" width="12" height="12" rx="3" fill="#388E3C"/>
+    <text x="308" y="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#E2E8F0">Success TX</text>
+
+    <rect x="385" y="0" width="12" height="12" rx="3" fill="#D32F2F"/>
+    <text x="403" y="10" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#E2E8F0">Reject / Error</text>
+  </g>
+
+
+  <g filter="url(#shadow)">
+    <rect x="40" y="90" width="260" height="56" rx="6" fill="#FFF8E1" stroke="#FFA000" stroke-width="1.8"/>
+    <rect x="48" y="96" width="110.6" height="14" rx="3" fill="#FFA000"/>
+    <text x="52" y="106" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">SYSTEM VALIDATION</text>
+    <text x="52" y="122" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#E65100">1. Barcode Format Validation</text>
+    <text x="52" y="134" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Product or Component barcode format</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="350" y="90" width="280" height="56" rx="6" fill="#FFEBEE" stroke="#D32F2F" stroke-width="1.8"/>
+    <rect x="358" y="96" width="116.39999999999999" height="14" rx="3" fill="#D32F2F"/>
+    <text x="362" y="106" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">REJECT / EXCEPTION</text>
+    <text x="362" y="122" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#B71C1C">Invalid Barcode Exception</text>
+    <text x="362" y="134" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">400 Bad Request: Malformed string</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="40" y="180" width="260" height="56" rx="6" fill="#FFF8E1" stroke="#FFA000" stroke-width="1.8"/>
+    <rect x="48" y="186" width="110.6" height="14" rx="3" fill="#FFA000"/>
+    <text x="52" y="196" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">SYSTEM VALIDATION</text>
+    <text x="52" y="212" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#E65100">2. Component Exclusivity Check</text>
+    <text x="52" y="224" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Is component already attached to a chassis?</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="350" y="180" width="280" height="56" rx="6" fill="#FFEBEE" stroke="#D32F2F" stroke-width="1.8"/>
+    <rect x="358" y="186" width="116.39999999999999" height="14" rx="3" fill="#D32F2F"/>
+    <text x="362" y="196" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">REJECT / EXCEPTION</text>
+    <text x="362" y="212" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#B71C1C">Duplicate Component Exception</text>
+    <text x="362" y="224" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">409 Conflict: Serial active on another unit</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="40" y="270" width="260" height="56" rx="6" fill="#FFF8E1" stroke="#FFA000" stroke-width="1.8"/>
+    <rect x="48" y="276" width="110.6" height="14" rx="3" fill="#FFA000"/>
+    <text x="52" y="286" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">SYSTEM VALIDATION</text>
+    <text x="52" y="302" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#E65100">3. Receiving Sequence Check</text>
+    <text x="52" y="314" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Has unit been tracked with components?</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="350" y="270" width="280" height="56" rx="6" fill="#FFEBEE" stroke="#D32F2F" stroke-width="1.8"/>
+    <rect x="358" y="276" width="116.39999999999999" height="14" rx="3" fill="#D32F2F"/>
+    <text x="362" y="286" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">REJECT / EXCEPTION</text>
+    <text x="362" y="302" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#B71C1C">Untracked Product Exception</text>
+    <text x="362" y="314" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">422 Unprocessable: Must track components first</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="40" y="360" width="260" height="56" rx="6" fill="#FFF8E1" stroke="#FFA000" stroke-width="1.8"/>
+    <rect x="48" y="366" width="110.6" height="14" rx="3" fill="#FFA000"/>
+    <text x="52" y="376" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">SYSTEM VALIDATION</text>
+    <text x="52" y="392" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#E65100">4. Double Receive Check</text>
+    <text x="52" y="404" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Is unit already IN_STOCK at warehouse?</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="350" y="360" width="280" height="56" rx="6" fill="#FFEBEE" stroke="#D32F2F" stroke-width="1.8"/>
+    <rect x="358" y="366" width="116.39999999999999" height="14" rx="3" fill="#D32F2F"/>
+    <text x="362" y="376" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">REJECT / EXCEPTION</text>
+    <text x="362" y="392" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#B71C1C">Duplicate Receive Exception</text>
+    <text x="362" y="404" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">409 Conflict: Unit already in stock</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="40" y="450" width="260" height="56" rx="6" fill="#FFF8E1" stroke="#FFA000" stroke-width="1.8"/>
+    <rect x="48" y="456" width="110.6" height="14" rx="3" fill="#FFA000"/>
+    <text x="52" y="466" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">SYSTEM VALIDATION</text>
+    <text x="52" y="482" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#E65100">5. Delivery Availability Check</text>
+    <text x="52" y="494" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Is unit currently IN_STOCK?</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="350" y="450" width="280" height="56" rx="6" fill="#FFEBEE" stroke="#D32F2F" stroke-width="1.8"/>
+    <rect x="358" y="456" width="116.39999999999999" height="14" rx="3" fill="#D32F2F"/>
+    <text x="362" y="466" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">REJECT / EXCEPTION</text>
+    <text x="362" y="482" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#B71C1C">Illegal Dispatch Exception</text>
+    <text x="362" y="494" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">400 Bad Request: Unit not in available stock</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="40" y="540" width="260" height="56" rx="6" fill="#FFF8E1" stroke="#FFA000" stroke-width="1.8"/>
+    <rect x="48" y="546" width="110.6" height="14" rx="3" fill="#FFA000"/>
+    <text x="52" y="556" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">SYSTEM VALIDATION</text>
+    <text x="52" y="572" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#E65100">6. Reversal Eligibility Check</text>
+    <text x="52" y="584" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Receive reversal: unit already delivered?</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="350" y="540" width="280" height="56" rx="6" fill="#FFEBEE" stroke="#D32F2F" stroke-width="1.8"/>
+    <rect x="358" y="546" width="116.39999999999999" height="14" rx="3" fill="#D32F2F"/>
+    <text x="362" y="556" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">REJECT / EXCEPTION</text>
+    <text x="362" y="572" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#B71C1C">Invalid Reversal Exception</text>
+    <text x="362" y="584" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">400 Bad Request: Downstream delivery exists</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="40" y="630" width="260" height="56" rx="6" fill="#FFF8E1" stroke="#FFA000" stroke-width="1.8"/>
+    <rect x="48" y="636" width="110.6" height="14" rx="3" fill="#FFA000"/>
+    <text x="52" y="646" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">SYSTEM VALIDATION</text>
+    <text x="52" y="662" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#E65100">7. Reversal Justification Check</text>
+    <text x="52" y="674" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Mandatory reason non-empty (min 10 chars)</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="350" y="630" width="280" height="56" rx="6" fill="#FFEBEE" stroke="#D32F2F" stroke-width="1.8"/>
+    <rect x="358" y="636" width="116.39999999999999" height="14" rx="3" fill="#D32F2F"/>
+    <text x="362" y="646" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">REJECT / EXCEPTION</text>
+    <text x="362" y="662" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#B71C1C">Missing Reason Exception</text>
+    <text x="362" y="674" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">422 Unprocessable: Reversal reason required</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="700" y="270" width="340" height="120" rx="6" fill="#FFEBEE" stroke="#D32F2F" stroke-width="1.8"/>
+    <rect x="708" y="276" width="116.39999999999999" height="14" rx="3" fill="#D32F2F"/>
+    <text x="712" y="286" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF">REJECT / EXCEPTION</text>
+    <text x="712" y="302" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#B71C1C">Centralized Express Error Handler</text>
+    <text x="712" y="314" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">Logs error to console & security audit log
+Emits structured JSON with error code & message
+Triggers client-side audio error buzzer</text>
+  </g>
+
+  <line x1="300" y1="118" x2="350" y2="118" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  <text x="331.0" y="114.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#D32F2F">Fail</text>
+
+  <path d="M 630 118 L 670 118 L 670 330 L 700 330" fill="none" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  
+
+  <line x1="300" y1="208" x2="350" y2="208" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  <text x="331.0" y="204.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#D32F2F">Fail</text>
+
+  <path d="M 630 208 L 670 208 L 670 330 L 700 330" fill="none" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  
+
+  <line x1="300" y1="298" x2="350" y2="298" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  <text x="331.0" y="294.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#D32F2F">Fail</text>
+
+  <path d="M 630 298 L 670 298 L 670 330 L 700 330" fill="none" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  
+
+  <line x1="300" y1="388" x2="350" y2="388" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  <text x="331.0" y="384.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#D32F2F">Fail</text>
+
+  <path d="M 630 388 L 670 388 L 670 330 L 700 330" fill="none" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  
+
+  <line x1="300" y1="478" x2="350" y2="478" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  <text x="331.0" y="474.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#D32F2F">Fail</text>
+
+  <path d="M 630 478 L 670 478 L 670 330 L 700 330" fill="none" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  
+
+  <line x1="300" y1="568" x2="350" y2="568" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  <text x="331.0" y="564.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#D32F2F">Fail</text>
+
+  <path d="M 630 568 L 670 568 L 670 330 L 700 330" fill="none" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  
+
+  <line x1="300" y1="658" x2="350" y2="658" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  <text x="331.0" y="654.0" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#D32F2F">Fail</text>
+
+  <path d="M 630 658 L 670 658 L 670 330 L 700 330" fill="none" stroke="#D32F2F" stroke-width="1.8" marker-end="url(#arrow-err)"/>
+  
+</svg>
