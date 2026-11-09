@@ -1,14 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react'
 
-// import {Libertinus_Sans} from 'next/font/google'
-
-// const Libertinus = Libertinus_Sans({
-//   subsets: ['latin'],
-//   weight: ['400', '700'],
-//   display: 'swap',
-// })
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
