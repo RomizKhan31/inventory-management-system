@@ -34,3 +34,10 @@ The database comprises 8 collections partitioned into 4 functional domains:
 |     - audit_logs: Master data mutations, logins, role adjustments, previous/new values  |
 +-----------------------------------------------------------------------------------------+
 ```
+
+| Section | Main Responsibility |
+|---|---|
+| IAM | Who can access the system? |
+| Master Data | What information does the system manage? |
+| Transaction Ledger | What happens to the inventory? |
+| Audit & Governance | Who changed what and when? |
