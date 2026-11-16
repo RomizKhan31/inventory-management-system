@@ -1,0 +1,38 @@
+# Root Git Ignore for Inventory Management System
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment Variables & Secrets
+.env
+.env.*
+.env.local
+!.env.example
+!**/.env.example
+
+# Next.js Build Output
+.next/
+out/
+.vercel
+
+# Node.js Build Output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

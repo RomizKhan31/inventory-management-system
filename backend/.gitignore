@@ -1,14 +1,12 @@
 # Dependencies
 node_modules/
-**/node_modules/
 
-# Environment variables
+# Environment Files
 .env
 .env.*
 !.env.example
 
-# Build files
-.next/
+# Build Artifacts
 dist/
 build/
 

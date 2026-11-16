@@ -23,13 +23,14 @@ export const seedDatabase = async () => {
     await mongoose.connect(MONGODB_URI);
     console.log('[Seed] Connected. Clearing existing collections...');
 
+    // Clear collections (using native collection for immutable transactions in dev seed)
     await Promise.all([
       User.deleteMany({}),
       Product.deleteMany({}),
       Component.deleteMany({}),
       ReceivePoint.deleteMany({}),
       DeliveryPoint.deleteMany({}),
-      InventoryTransaction.deleteMany({}),
+      mongoose.connection.collection('inventory_transactions').deleteMany({}),
       AuditLog.deleteMany({}),
       ComponentBinding.deleteMany({}),
     ]);
