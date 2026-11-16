@@ -9,7 +9,7 @@ const envSchema = z.object({
   MONGODB_URI: z
     .string()
     .min(1, 'MONGODB_URI must be provided')
-    .default('mongodb://127.0.0.1:27017/inventory_db?replicaSet=rs0'),
+    .default('mongodb+srv://waltonromiz26_db_user:yrgrOQG2iET2lbiF@inventory-management-sy.4q8ztjw.mongodb.net/'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   JWT_SECRET: z.string().min(8, 'JWT_SECRET must be at least 8 characters').default('walton_inventory_secret_key_2026_attachment'),
   JWT_EXPIRES_IN: z.string().default('8h'),
