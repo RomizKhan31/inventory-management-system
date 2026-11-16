@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from './config/env';
 import { apiRouter } from './routes';
+import { authRoutes } from './modules/auth/auth.routes';
 import { errorHandler } from './middlewares/errorHandler';
 import { notFoundHandler } from './middlewares/notFoundHandler';
 
@@ -57,8 +58,9 @@ export const createApp = (): Application => {
     });
   });
 
-  // 6. API v1 Routes
+  // 6. API Routes
   app.use('/api/v1', apiRouter);
+  app.use('/api/auth', authRoutes); // Direct alias for /api/auth/* endpoints
 
   // 7. 404 Route Handler
   app.use(notFoundHandler);

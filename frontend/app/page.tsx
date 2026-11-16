@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { api } from '@/src/lib/api';
 import { HealthCheckResponse } from '@/src/types/api';
+import { useAuth } from '@/src/context/AuthContext';
 
 export default function HomePage() {
+  const { user, isAuthenticated } = useAuth();
   const [health, setHealth] = useState<HealthCheckResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export default function HomePage() {
           <div className="inline-flex items-center space-x-2 bg-sky-500/20 text-sky-300 text-xs font-semibold px-3 py-1 rounded-full border border-sky-400/30">
             <span>Phase 4: Development</span>
             <span>•</span>
-            <span>Day 1 of 10 Initialized</span>
+            <span>Day 2 of 10: Authentication Complete</span>
           </div>
           <h2 className="text-3xl font-extrabold tracking-tight">
             Industrial Discrete Manufacturing Inventory Management System
@@ -70,6 +73,25 @@ export default function HomePage() {
             Engineered for high-throughput serialization tracking across component assembly,
             warehouse intake, and dock delivery with an append-only event ledger in MongoDB Atlas.
           </p>
+
+          {isAuthenticated && user ? (
+            <div className="pt-2 flex items-center space-x-3 text-xs">
+              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-lg font-semibold">
+                Logged In as: {user.name} ({user.role})
+              </span>
+              <span className="text-slate-300 font-mono">Employee ID: {user.userCode}</span>
+            </div>
+          ) : (
+            <div className="pt-2">
+              <Link
+                href="/login"
+                className="inline-flex items-center space-x-2 bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors shadow-sm"
+              >
+                <span>Sign In to Access Operations</span>
+                <span>&rarr;</span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
@@ -163,50 +185,59 @@ export default function HomePage() {
         ) : null}
       </div>
 
-      {/* Phase Roadmap Progress Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-emerald-200 bg-emerald-50/20 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
-            <span>Phase 1 (1 Day)</span>
-            <span>✅ Approved</span>
+      {/* Role-Based Module Map (Preview) */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-slate-900">Operational Modules & Role Gates</h3>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 inline-block">
+              ADMIN
+            </span>
+            <h4 className="font-bold text-slate-900 text-sm">Master Data & Reversals</h4>
+            <p className="text-xs text-slate-500">
+              Full CRUD over products, points, users, and audit-compliant transaction reversals.
+            </p>
           </div>
-          <h4 className="font-bold text-slate-900 text-sm">Requirement Analysis</h4>
-          <p className="text-xs text-slate-600">
-            Full Software Requirements Specification (SRS), 5 roles, rules BR-01 to BR-23.
-          </p>
-        </div>
 
-        <div className="bg-white p-5 rounded-xl border border-emerald-200 bg-emerald-50/20 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
-            <span>Phase 2 (2 Days)</span>
-            <span>✅ Approved</span>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <span className="text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200 inline-block">
+              TRACKER
+            </span>
+            <h4 className="font-bold text-slate-900 text-sm">Component Tracking</h4>
+            <p className="text-xs text-slate-500">
+              Scans product chassis & binds serialized sub-assemblies before warehouse receiving.
+            </p>
           </div>
-          <h4 className="font-bold text-slate-900 text-sm">Process Flow Diagrams</h4>
-          <p className="text-xs text-slate-600">
-            Role swimlanes, 8 workflow models, state machines, and 13 exception paths.
-          </p>
-        </div>
 
-        <div className="bg-white p-5 rounded-xl border border-emerald-200 bg-emerald-50/20 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
-            <span>Phase 3 (2 Days)</span>
-            <span>✅ Approved</span>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 inline-block">
+              RECEIVE
+            </span>
+            <h4 className="font-bold text-slate-900 text-sm">Product Receiving</h4>
+            <p className="text-xs text-slate-500">
+              Validates tracking & admits products into stock at designated warehouse bays.
+            </p>
           </div>
-          <h4 className="font-bold text-slate-900 text-sm">Database Architecture</h4>
-          <p className="text-xs text-slate-600">
-            Mongoose schemas, append-only immutability, derived stock aggregation, seed script.
-          </p>
-        </div>
 
-        <div className="bg-white p-5 rounded-xl border border-sky-300 bg-sky-50/40 shadow-sm space-y-2 ring-1 ring-sky-300">
-          <div className="flex items-center justify-between text-xs font-semibold text-sky-800">
-            <span>Phase 4 (10 Days)</span>
-            <span className="text-sky-600 animate-pulse">● In Progress</span>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 inline-block">
+              DELIVERY
+            </span>
+            <h4 className="font-bold text-slate-900 text-sm">Product Delivery</h4>
+            <p className="text-xs text-slate-500">
+              Verifies stock availability & dispatches units through outbound logistics docks.
+            </p>
           </div>
-          <h4 className="font-bold text-slate-900 text-sm">Development: Day 1</h4>
-          <p className="text-xs text-slate-600">
-            Full-stack initialization, TypeScript configuration, health-check API & CORS.
-          </p>
+
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 inline-block">
+              VIEWER
+            </span>
+            <h4 className="font-bold text-slate-900 text-sm">Reports & Inquiries</h4>
+            <p className="text-xs text-slate-500">
+              Read-only stock details, daily throughput graphs, aging stock, & CSV export.
+            </p>
+          </div>
         </div>
       </div>
     </div>

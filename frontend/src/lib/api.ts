@@ -15,6 +15,23 @@ export class ApiClientError extends Error {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
+export const TOKEN_STORAGE_KEY = 'walton_ims_token';
+
+export const getToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_STORAGE_KEY);
+};
+
+export const setToken = (token: string): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+};
+
+export const removeToken = (): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+};
+
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -27,6 +44,12 @@ export async function apiFetch<T>(
     headers.set('Content-Type', 'application/json');
   }
 
+  // Automatically attach Authorization header if token exists and not already provided
+  const token = getToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
@@ -36,6 +59,11 @@ export async function apiFetch<T>(
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      // If unauthorized or account deactivated, clear token automatically
+      if (response.status === 401 || (response.status === 403 && data?.errorCode === 'ACCOUNT_DEACTIVATED')) {
+        removeToken();
+      }
+
       const errorMessage = data?.message || `Request failed with status: ${response.status}`;
       throw new ApiClientError(
         errorMessage,
