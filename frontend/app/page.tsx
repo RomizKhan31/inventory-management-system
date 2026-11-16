@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api } from '@/src/lib/api';
 import { HealthCheckResponse } from '@/src/types/api';
 import { useAuth } from '@/src/context/AuthContext';
+import { getNavItemsForRole } from '@/src/config/navigation';
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
@@ -56,6 +57,8 @@ export default function HomePage() {
     };
   }, []);
 
+  const accessibleModules = isAuthenticated && user ? getNavItemsForRole(user.role) : [];
+
   return (
     <div className="space-y-8">
       {/* Hero Banner */}
@@ -64,7 +67,7 @@ export default function HomePage() {
           <div className="inline-flex items-center space-x-2 bg-sky-500/20 text-sky-300 text-xs font-semibold px-3 py-1 rounded-full border border-sky-400/30">
             <span>Phase 4: Development</span>
             <span>•</span>
-            <span>Day 2 of 10: Authentication Complete</span>
+            <span>Day 3 of 10: Role-Based Access Control Active</span>
           </div>
           <h2 className="text-3xl font-extrabold tracking-tight">
             Industrial Discrete Manufacturing Inventory Management System
@@ -75,7 +78,7 @@ export default function HomePage() {
           </p>
 
           {isAuthenticated && user ? (
-            <div className="pt-2 flex items-center space-x-3 text-xs">
+            <div className="pt-2 flex flex-wrap items-center gap-3 text-xs">
               <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-lg font-semibold">
                 Logged In as: {user.name} ({user.role})
               </span>
@@ -94,6 +97,57 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      {/* Authenticated User: Accessible Operational Stations */}
+      {isAuthenticated && user && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Your Permitted Stations & Modules
+              </h3>
+              <p className="text-xs text-slate-500">
+                Filtered strictly by single-role assignment: <span className="font-semibold text-slate-700">[{user.role}]</span>
+              </p>
+            </div>
+            <span className="text-xs bg-sky-50 text-sky-700 font-bold px-2.5 py-1 rounded-full border border-sky-200">
+              {accessibleModules.length} Modules Authorized
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {accessibleModules.map((mod) => (
+              <Link
+                key={mod.href}
+                href={mod.href}
+                className="group p-4 rounded-xl border border-slate-200 hover:border-sky-500 hover:bg-sky-50/40 transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-sky-600 transition-colors">
+                      {mod.category}
+                    </span>
+                    <span className="text-xs text-sky-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                      &rarr;
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-sm mt-1 group-hover:text-sky-800 transition-colors">
+                    {mod.name}
+                  </h4>
+                  {mod.description && (
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      {mod.description}
+                    </p>
+                  )}
+                </div>
+                <div className="mt-3 pt-2 border-t border-slate-100 text-[11px] font-mono text-slate-400 group-hover:text-sky-600">
+                  {mod.href}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Live System Health Diagnostic Card */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
@@ -185,9 +239,9 @@ export default function HomePage() {
         ) : null}
       </div>
 
-      {/* Role-Based Module Map (Preview) */}
+      {/* Role-Based Module Map (Full Reference) */}
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-slate-900">Operational Modules & Role Gates</h3>
+        <h3 className="text-lg font-bold text-slate-900">5-Role Industrial Authorization Reference</h3>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
             <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 inline-block">

@@ -21,7 +21,8 @@
     "lint": "tsc --noEmit",
     "test:auth": "tsx tests/auth.integration.test.ts",
     "test:deactivation": "tsx tests/deactivation.integration.test.ts",
-    "test": "tsx tests/auth.integration.test.ts && tsx tests/deactivation.integration.test.ts"
+    "test:rbac": "tsx tests/rbac.matrix.test.ts",
+    "test": "tsx tests/auth.integration.test.ts && tsx tests/deactivation.integration.test.ts && tsx tests/rbac.matrix.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
-import { User, IUser, UserRole } from '../database/models/User';
+import { User, UserRole } from '../database/models/User';
 import { AppError } from '../utils/AppError';
+import { Permission, hasAllPermissions, isRoleAllowed } from '../config/rbac';
 
 export interface JwtPayload {
   id: string;
@@ -84,7 +85,7 @@ export const authenticate = async (
 };
 
 /**
- * Role-Based Access Control Middleware:
+ * Role-Based Access Control Middleware (Role Level):
  * Verifies that the authenticated user holds one of the required roles.
  */
 export const requireRole = (...allowedRoles: UserRole[]) => {
@@ -95,13 +96,40 @@ export const requireRole = (...allowedRoles: UserRole[]) => {
       );
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!isRoleAllowed(req.user.role, allowedRoles)) {
       return next(
         AppError.forbidden(
-          `Access denied. Role '${req.user.role}' is not authorized for this resource. Required: [${allowedRoles.join(
+          `Access denied. Role '${req.user.role}' is not authorized for this resource. Required role(s): [${allowedRoles.join(
             ', '
           )}]`,
           'ROLE_NOT_AUTHORIZED'
+        )
+      );
+    }
+
+    next();
+  };
+};
+
+/**
+ * Permission-Based Access Control Middleware (Granular Permission Level):
+ * Verifies that the authenticated user's role grants all required permissions.
+ */
+export const requirePermission = (...requiredPermissions: Permission[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      return next(
+        AppError.unauthorized('Authentication required', 'AUTHENTICATION_REQUIRED')
+      );
+    }
+
+    if (!hasAllPermissions(req.user.role, requiredPermissions)) {
+      return next(
+        AppError.forbidden(
+          `Access denied. Role '${req.user.role}' lacks permission: [${requiredPermissions.join(
+            ', '
+          )}]`,
+          'PERMISSION_DENIED'
         )
       );
     }
