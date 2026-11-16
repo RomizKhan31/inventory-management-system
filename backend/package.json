@@ -23,7 +23,8 @@
     "test:deactivation": "tsx tests/deactivation.integration.test.ts",
     "test:rbac": "tsx tests/rbac.matrix.test.ts",
     "test:admin": "tsx tests/admin.management.test.ts",
-    "test": "tsx tests/auth.integration.test.ts && tsx tests/deactivation.integration.test.ts && tsx tests/rbac.matrix.test.ts && tsx tests/admin.management.test.ts"
+    "test:tracking": "tsx tests/component.tracking.test.ts",
+    "test": "tsx tests/auth.integration.test.ts && tsx tests/deactivation.integration.test.ts && tsx tests/rbac.matrix.test.ts && tsx tests/admin.management.test.ts && tsx tests/component.tracking.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

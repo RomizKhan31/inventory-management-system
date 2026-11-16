@@ -39,7 +39,7 @@ const TEST_CASES: TestCase[] = [
     name: '1. Component Tracking',
     endpoint: '/inventory/track-components',
     method: 'POST',
-    payload: { productBarcode: '2440701AK2057', componentBarcode: '94A600321852' },
+    payload: { productBarcode: 'RBAC_CHASSIS_99', componentBarcode: 'RBAC_COMP_99' },
     allowedRoles: ['ADMIN', 'COMPONENT_TRACKER'],
   },
   {
@@ -154,13 +154,18 @@ async function runRbacMatrixTests() {
       const token = tokens[role]!;
       const isAllowed = tc.allowedRoles.includes(role);
 
+      let payload = tc.payload;
+      if (payload && payload.componentBarcode) {
+        payload = { ...payload, componentBarcode: `${payload.componentBarcode}_${role}_${Date.now()}` };
+      }
+
       const res = await fetch(`${BASE_URL}${tc.endpoint}`, {
         method: tc.method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: tc.payload ? JSON.stringify(tc.payload) : undefined,
+        body: payload ? JSON.stringify(payload) : undefined,
       });
 
       const body: any = await res.json().catch(() => null);
