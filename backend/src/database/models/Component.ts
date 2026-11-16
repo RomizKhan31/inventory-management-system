@@ -2,6 +2,7 @@ import { Schema, model, Document, Model } from 'mongoose';
 
 export interface IComponent extends Document {
   componentCode: string; // e.g. "COMP-INV-01", "COND-CU-02"
+  barcode?: string; // Optional component master barcode
   name: string; // e.g. "Compressor", "Condenser", "Inverter PCB"
   category: string;
   specifications?: string;
@@ -17,6 +18,14 @@ const ComponentSchema = new Schema<IComponent>(
       type: String,
       required: [true, 'Component code is required'],
       unique: true,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
+    barcode: {
+      type: String,
+      unique: true,
+      sparse: true,
       trim: true,
       uppercase: true,
       index: true,

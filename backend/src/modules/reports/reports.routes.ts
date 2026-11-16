@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate, requirePermission } from '../../middlewares/auth.middleware';
 import { sendResponse } from '../../utils/response';
 import { AuditLog } from '../../database/models/AuditLog';
+import { AuditService } from '../audit/audit.service';
 
 const router = Router();
 
@@ -83,8 +84,8 @@ router.get(
   '/audit-logs',
   requirePermission('AUDIT_VIEW'),
   async (req: Request, res: Response) => {
-    const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100);
-    sendResponse(res, 200, 'Authorized: Audit logs retrieved successfully', logs);
+    const result = await AuditService.getLogs(req.query);
+    sendResponse(res, 200, 'Authorized: Audit logs retrieved successfully', result.data, result.pagination);
   }
 );
 

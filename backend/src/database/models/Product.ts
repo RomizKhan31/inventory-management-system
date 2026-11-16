@@ -2,6 +2,7 @@ import { Schema, model, Document, Model } from 'mongoose';
 
 export interface IProduct extends Document {
   productCode: string; // e.g. "REF-WDN-2B6", "AC-INV-1.5T"
+  barcode?: string; // Optional SKU / EAN / Item Barcode
   name: string; // e.g. "Refrigerator", "Air Conditioner"
   modelNumber?: string;
   category: string; // e.g. "Appliances", "HVAC"
@@ -18,6 +19,14 @@ const ProductSchema = new Schema<IProduct>(
       type: String,
       required: [true, 'Product code is required'],
       unique: true,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
+    barcode: {
+      type: String,
+      unique: true,
+      sparse: true,
       trim: true,
       uppercase: true,
       index: true,

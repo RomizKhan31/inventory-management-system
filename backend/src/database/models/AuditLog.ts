@@ -5,6 +5,7 @@ export type AuditAction =
   | 'USER_LOGIN_FAILED'
   | 'USER_LOGOUT'
   | 'USER_CREATED'
+  | 'USER_UPDATED'
   | 'USER_ROLE_CHANGED'
   | 'USER_ACTIVATED'
   | 'USER_DEACTIVATED'
