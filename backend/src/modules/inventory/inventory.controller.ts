@@ -183,6 +183,18 @@ export class InventoryController {
   }
 
   /**
+   * Get real-time dashboard statistics and aging inventory
+   */
+  static async getDashboardStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stats = await InventoryService.getDashboardStatistics();
+      sendResponse(res, 200, 'Dashboard statistics retrieved successfully', stats);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * Get single transaction details by ID
    */
   static async getTransactionById(req: Request, res: Response, next: NextFunction) {

@@ -263,3 +263,42 @@ export interface IBarcodeHistoryReportData {
     lastActivityAt?: string;
   };
 }
+
+export interface IDashboardResponse {
+  metrics: {
+    currentStockCount: number;
+    todayReceivedCount: number;
+    todayDeliveredCount: number;
+    todayReversalsCount: number;
+    totalTrackedWipCount: number;
+    totalDeliveredCount: number;
+    totalTrackedProductsCount: number;
+  };
+  longestInStockProducts: Array<{
+    productBarcode: string;
+    productModel: string;
+    currentReceivePoint: string;
+    receivedAt: string;
+    daysInStock: number;
+    componentCount: number;
+    components: Array<{ barcode: string; name: string }>;
+  }>;
+  recentTransactions: Array<{
+    _id: string;
+    productBarcode: string;
+    productModel: string;
+    eventType: string;
+    pointName: string;
+    userName: string;
+    userCode: string;
+    createdAt: string;
+    isReversal: boolean;
+    reason?: string;
+  }>;
+  systemSummary: {
+    activeReceiveBaysCount: number;
+    activeDeliveryDocksCount: number;
+    activeComponentsCatalogCount: number;
+    activeProductsCatalogCount: number;
+  };
+}

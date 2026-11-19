@@ -9,6 +9,16 @@ const router = Router();
 router.use(authenticate);
 
 /**
+ * 0. Dashboard Summary & Real-Time Operational Statistics
+ * Accessible to all authenticated users.
+ */
+router.get(
+  '/dashboard',
+  requireRole('ADMIN', 'REPORT_VIEWER', 'RECEIVE_USER', 'DELIVERY_USER', 'COMPONENT_TRACKER'),
+  InventoryController.getDashboardStats
+);
+
+/**
  * 1. Product & Component Barcode Validation Enquiries
  */
 router.get(

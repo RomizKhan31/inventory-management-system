@@ -1528,6 +1528,174 @@ export class InventoryService {
       originalTransaction: originalTx || undefined,
     };
   }
+
+  /**
+   * Dashboard real-time operational statistics & longest-in-stock aging inventory.
+   * Calculated directly from the append-only ledger, excluding reversed operations.
+   */
+  static async getDashboardStatistics() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // 1. Ledger grouping to derive true real-time stock positions
+    const groupedProducts = await InventoryTransaction.aggregate([
+      { $sort: { createdAt: 1 } },
+      {
+        $group: {
+          _id: '$productBarcode',
+          productBarcode: { $first: '$productBarcode' },
+          productModel: { $last: '$productModel' },
+          transactions: {
+            $push: {
+              _id: '$_id',
+              eventType: '$eventType',
+              pointName: '$pointName',
+              componentBarcode: '$componentBarcode',
+              componentName: '$componentName',
+              reversedTransactionId: '$reversedTransactionId',
+              createdAt: '$createdAt',
+            },
+          },
+          lastActivity: { $max: '$createdAt' },
+        },
+      },
+    ]);
+
+    // Active component bindings lookup
+    const activeBindings = await ComponentBinding.find().lean();
+    const bindingsMap = new Map<string, Array<{ barcode: string; name: string }>>();
+    for (const b of activeBindings) {
+      if (!bindingsMap.has(b.productBarcode)) {
+        bindingsMap.set(b.productBarcode, []);
+      }
+      bindingsMap.get(b.productBarcode)!.push({
+        barcode: b.componentBarcode,
+        name: b.componentName,
+      });
+    }
+
+    let inStockCount = 0;
+    let deliveredCount = 0;
+    let trackedCount = 0;
+    const inStockItems: Array<{
+      productBarcode: string;
+      productModel: string;
+      currentReceivePoint: string;
+      receivedAt: Date;
+      daysInStock: number;
+      componentCount: number;
+      components: Array<{ barcode: string; name: string }>;
+    }> = [];
+
+    const now = Date.now();
+
+    for (const group of groupedProducts) {
+      const txs = group.transactions || [];
+      const reversedIds = new Set<string>();
+
+      for (const tx of txs) {
+        if (tx.reversedTransactionId) {
+          reversedIds.add(String(tx.reversedTransactionId));
+        }
+      }
+
+      const activeTxs = txs.filter(
+        (t: any) => !reversedIds.has(String(t._id)) && !t.eventType.startsWith('REVERSED_')
+      );
+
+      const activeReceived = activeTxs.filter((t: any) => t.eventType === 'RECEIVED');
+      const activeDelivered = activeTxs.filter((t: any) => t.eventType === 'DELIVERED');
+      const boundComponents = bindingsMap.get(group.productBarcode) || [];
+
+      if (activeDelivered.length > 0) {
+        deliveredCount++;
+      } else if (activeReceived.length > 0) {
+        inStockCount++;
+        const latestReceived = activeReceived[activeReceived.length - 1];
+        const daysInStock = Math.max(
+          0,
+          Math.floor((now - new Date(latestReceived.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+        );
+
+        inStockItems.push({
+          productBarcode: group.productBarcode,
+          productModel: group.productModel || 'Standard Product',
+          currentReceivePoint: latestReceived.pointName || 'Warehouse Receiving Bay',
+          receivedAt: latestReceived.createdAt,
+          daysInStock,
+          componentCount: boundComponents.length,
+          components: boundComponents,
+        });
+      } else if (boundComponents.length > 0) {
+        trackedCount++;
+      }
+    }
+
+    // Sort in-stock items by receivedAt ascending (earliest received = longest in stock!)
+    inStockItems.sort((a, b) => new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime());
+    const longestInStock = inStockItems.slice(0, 8);
+
+    // 2. Today's metrics
+    const [
+      rawTodayReceived,
+      todayReversedReceive,
+      rawTodayDelivered,
+      todayReversedDelivery,
+      todayReversalsCount,
+      recentTxDocs,
+      activeReceiveBays,
+      activeDeliveryDocks,
+      activeComponentsCount,
+      activeProductsCount,
+    ] = await Promise.all([
+      InventoryTransaction.countDocuments({ eventType: 'RECEIVED', createdAt: { $gte: startOfToday } }),
+      InventoryTransaction.countDocuments({ eventType: 'REVERSED_RECEIVE', createdAt: { $gte: startOfToday } }),
+      InventoryTransaction.countDocuments({ eventType: 'DELIVERED', createdAt: { $gte: startOfToday } }),
+      InventoryTransaction.countDocuments({ eventType: 'REVERSED_DELIVERY', createdAt: { $gte: startOfToday } }),
+      InventoryTransaction.countDocuments({ eventType: { $regex: '^REVERSED_' }, createdAt: { $gte: startOfToday } }),
+      InventoryTransaction.find().sort({ createdAt: -1 }).limit(8).lean(),
+      ReceivePoint.countDocuments({ isActive: true, isDeleted: false }),
+      DeliveryPoint.countDocuments({ isActive: true, isDeleted: false }),
+      Component.countDocuments({ isActive: true, isDeleted: false }),
+      Product.countDocuments({ isActive: true, isDeleted: false }),
+    ]);
+
+    const netTodayReceived = Math.max(0, rawTodayReceived - todayReversedReceive);
+    const netTodayDelivered = Math.max(0, rawTodayDelivered - todayReversedDelivery);
+
+    const recentTransactions = recentTxDocs.map((tx) => ({
+      _id: String(tx._id),
+      productBarcode: tx.productBarcode,
+      productModel: tx.productModel,
+      eventType: tx.eventType,
+      pointName: tx.pointName,
+      userName: tx.userName,
+      userCode: tx.userCode,
+      createdAt: tx.createdAt,
+      isReversal: tx.eventType.startsWith('REVERSED_'),
+      reason: tx.reason,
+    }));
+
+    return {
+      metrics: {
+        currentStockCount: inStockCount,
+        todayReceivedCount: netTodayReceived,
+        todayDeliveredCount: netTodayDelivered,
+        todayReversalsCount,
+        totalTrackedWipCount: trackedCount,
+        totalDeliveredCount: deliveredCount,
+        totalTrackedProductsCount: groupedProducts.length,
+      },
+      longestInStockProducts: longestInStock,
+      recentTransactions,
+      systemSummary: {
+        activeReceiveBaysCount: activeReceiveBays,
+        activeDeliveryDocksCount: activeDeliveryDocks,
+        activeComponentsCatalogCount: activeComponentsCount,
+        activeProductsCatalogCount: activeProductsCount,
+      },
+    };
+  }
 }
 
 function isValidObjectId(id?: string) {

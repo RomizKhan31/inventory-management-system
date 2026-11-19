@@ -28,7 +28,8 @@
     "test:delivery": "tsx tests/product.delivery.test.ts",
     "test:reversal": "tsx tests/reversal.audit.test.ts",
     "test:reports": "tsx tests/reports.analytics.test.ts",
-    "test": "tsx tests/auth.integration.test.ts && tsx tests/deactivation.integration.test.ts && tsx tests/rbac.matrix.test.ts && tsx tests/admin.management.test.ts && tsx tests/component.tracking.test.ts && tsx tests/product.receiving.test.ts && tsx tests/product.delivery.test.ts && tsx tests/reversal.audit.test.ts && tsx tests/reports.analytics.test.ts"
+    "test:e2e": "tsx tests/e2e.walton.workflow.test.ts",
+    "test": "tsx tests/auth.integration.test.ts && tsx tests/deactivation.integration.test.ts && tsx tests/rbac.matrix.test.ts && tsx tests/admin.management.test.ts && tsx tests/component.tracking.test.ts && tsx tests/product.receiving.test.ts && tsx tests/product.delivery.test.ts && tsx tests/reversal.audit.test.ts && tsx tests/reports.analytics.test.ts && tsx tests/e2e.walton.workflow.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
