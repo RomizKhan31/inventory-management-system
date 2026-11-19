@@ -3,6 +3,7 @@ import './globals.css';
 import { ReactNode } from 'react';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { AppHeader } from '@/src/components/layout/AppHeader';
+import { AppFooter } from '@/src/components/layout/AppFooter';
 
 export const metadata: Metadata = {
   title: 'Walton Inventory Management System',
@@ -20,16 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
           </main>
 
-          <footer className="border-t border-slate-200 bg-white py-6 mt-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-              <p>
-                &copy; 2026 Walton Hi-Tech Industries PLC. Industrial Attachment Project.
-              </p>
-              <p>
-                Stack: Next.js 16 • React 19 • Express.js 5 • MongoDB Atlas • TypeScript
-              </p>
-            </div>
-          </footer>
+          <AppFooter />
         </AuthProvider>
       </body>
     </html>

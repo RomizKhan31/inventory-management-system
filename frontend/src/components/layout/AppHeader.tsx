@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/src/context/AuthContext';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
 import { getGroupedNavForRole, NavItem } from '@/src/config/navigation';
-import { ChevronDown, Key, LogOut, Menu, X, Activity } from 'lucide-react';
+import { ChevronDown, Key, LogOut, Menu, X } from 'lucide-react';
 
 export const AppHeader = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -64,16 +65,28 @@ export const AppHeader = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand Logo & Title */}
           <div className="flex items-center space-x-6">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-lg bg-sky-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                W
+            <Link href="/" className="flex items-center space-x-2.5 group">
+              <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+                <Image
+                  src="/walton_logo.webp"
+                  alt="Walton Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain"
+                  priority
+                />
               </div>
               <div>
-                <h1 className="font-bold text-slate-900 text-lg leading-tight">
-                  WALTON <span className="font-normal text-slate-500">| IMS</span>
-                </h1>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  Barcode Inventory Tracking
+                <div className="flex items-center space-x-1.5 leading-none">
+                  <span className="font-extrabold text-slate-900 text-base tracking-tight group-hover:text-sky-600 transition-colors">
+                    WALTON
+                  </span>
+                  <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200/60 uppercase">
+                    IMS
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-medium tracking-wide mt-0.5">
+                  Discrete Manufacturing
                 </p>
               </div>
             </Link>
@@ -164,22 +177,14 @@ export const AppHeader = () => {
           <div className="flex items-center space-x-3 text-sm">
             <Link
               href="/"
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                pathname === '/' ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                pathname === '/'
+                  ? 'bg-slate-100 text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               Dashboard
             </Link>
-
-            <a
-              href="http://localhost:5000/api/v1/health"
-              target="_blank"
-              rel="noreferrer"
-              className="hidden md:flex px-2.5 py-1 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs transition-colors items-center space-x-1.5"
-            >
-              <Activity className="w-3.5 h-3.5 text-emerald-600" />
-              <span>API Health</span>
-            </a>
 
             {isAuthenticated && user ? (
               <div className="flex items-center space-x-2 sm:space-x-3 pl-3 border-l border-slate-200">

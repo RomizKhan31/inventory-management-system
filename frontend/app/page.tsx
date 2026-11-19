@@ -109,53 +109,36 @@ export default function HomePage() {
       {/* Toast Notification */}
       <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
-      {/* Hero Welcome Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-sm border border-slate-800 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="max-w-3xl space-y-3 relative z-10">
-          <div className="inline-flex items-center space-x-2 bg-sky-500/20 text-sky-300 text-xs font-semibold px-3 py-1 rounded-full border border-sky-400/30">
-            <span>Walton Hi-Tech Industries PLC</span>
-            <span>•</span>
-            <span>Discrete Manufacturing IMS</span>
+      {/* Dashboard Header Bar */}
+      {isAuthenticated && user && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Operational Dashboard
+            </h1>
+            <p className="text-xs text-slate-500">
+              Real-time serialized stock levels, intake and delivery metrics
+            </p>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            {isAuthenticated && user
-              ? `Operational Dashboard — ${user.name}`
-              : 'Industrial Barcode Inventory Management System'}
-          </h1>
-
-          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
-            Discrete manufacturing inventory execution system with real-time barcode serialization, immutable event ledger tracking, and audit trails.
-          </p>
-
-          {isAuthenticated && user ? (
-            <div className="pt-2 flex flex-wrap items-center gap-3 text-xs">
-              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-xl font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Active Role: {user.role}</span>
+          <div className="flex items-center gap-3">
+            {lastRefreshed && (
+              <span className="text-[11px] text-slate-400 font-mono">
+                Updated: {lastRefreshed}
               </span>
-              <span className="text-slate-400 font-mono text-[11px]">ID: {user.userCode}</span>
-              {lastRefreshed && (
-                <span className="text-slate-400 font-mono text-[11px]">
-                  Updated: {lastRefreshed}
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="pt-3">
-              <Link
-                href="/login"
-                className="inline-flex items-center space-x-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
-              >
-                <span>Sign In to Access Industrial Workstations</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Link>
-            </div>
-          )}
+            )}
+            <button
+              onClick={fetchDashboardStats}
+              disabled={loading}
+              title="Refresh Data"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Authenticated Dashboard Core */}
       {isAuthenticated && user ? (
@@ -593,13 +576,22 @@ export default function HomePage() {
       ) : (
         /* Guest / Unauthenticated Landing View */
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs space-y-6">
-          <div className="space-y-2 max-w-2xl">
-            <h2 className="text-lg font-bold text-slate-900">
-              Discrete Manufacturing Barcode Ledger
-            </h2>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Industrial inventory tracking system built for Walton Hi-Tech Industries PLC. Strictly controls manufacturing serialized product lifecycles through role-isolated operations:
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+            <div className="space-y-1 max-w-2xl">
+              <h2 className="text-lg font-bold text-slate-900">
+                Discrete Manufacturing Inventory System
+              </h2>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Industrial serialized inventory execution system built for Walton Hi-Tech Industries PLC. Sign in with your assigned employee ID to access authorized workstations.
+              </p>
+            </div>
+            <Link
+              href="/login"
+              className="inline-flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-xs shrink-0 cursor-pointer"
+            >
+              <span>Sign In to Workstations</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

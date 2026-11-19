@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/src/context/AuthContext';
 import {
   AlertCircle,
@@ -56,17 +57,26 @@ export default function LoginPage() {
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-6">
       <div className="w-full max-w-md space-y-6">
-        {/* Header Title */}
-        <div className="text-center space-y-1.5">
-          <div className="w-11 h-11 rounded-xl bg-sky-600 text-white font-extrabold text-xl flex items-center justify-center mx-auto shadow-sm">
-            W
+        {/* Header Title with Walton Logo */}
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 mx-auto relative flex items-center justify-center">
+            <Image
+              src="/walton_logo.webp"
+              alt="Walton Logo"
+              width={48}
+              height={48}
+              className="w-12 h-12 object-contain"
+              priority
+            />
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Inventory Portal Sign In
-          </h2>
-          <p className="text-xs text-slate-500">
-            Role-Based Discrete Manufacturing & Ledger Tracking
-          </p>
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              Inventory Portal Sign In
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Walton Hi-Tech Industries PLC • Discrete Manufacturing IMS
+            </p>
+          </div>
         </div>
 
         {/* Login Card */}
