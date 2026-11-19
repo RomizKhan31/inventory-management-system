@@ -464,113 +464,138 @@ export class InventoryService {
     const formattedProductBarcode = productBarcode.trim().toUpperCase();
     const formattedComponentBarcode = componentBarcode.trim().toUpperCase();
 
-    // 1. Verify Active Binding
-    const binding = await ComponentBinding.findOne({
-      productBarcode: formattedProductBarcode,
-      componentBarcode: formattedComponentBarcode,
-    });
-
-    if (!binding) {
-      throw AppError.notFound(
-        `Component barcode '${formattedComponentBarcode}' is not actively bound to product '${formattedProductBarcode}'.`
-      );
+    if (!reason || reason.trim().length < 10) {
+      throw AppError.unprocessable('Reversal reason is mandatory and must be at least 10 characters long');
     }
 
-    // 2. Lifecycle Check: Cannot reverse component tracking if product has already entered warehouse stock
-    const productState = await this.deriveProductState(formattedProductBarcode);
-    if (productState.isCurrentlyReceived || productState.isCurrentlyDelivered) {
-      throw AppError.badRequest(
-        `Cannot detach component: Product '${formattedProductBarcode}' has already been received into warehouse stock. The receiving operation must be reversed first.`
-      );
-    }
-
-    // 3. Find original COMPONENT_TRACKED event
-    const origTx = await InventoryTransaction.findOne({
-      productBarcode: formattedProductBarcode,
-      componentBarcode: formattedComponentBarcode,
-      eventType: 'COMPONENT_TRACKED',
-    })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // 4. Create compensating reversal transaction & delete active binding
-    let session: mongoose.ClientSession | null = null;
-    try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-    } catch {
-      session = null;
-    }
-
-    let reversalTx;
-    try {
-      const reversalDoc = {
+    return await barcodeMutex.runExclusive(formattedProductBarcode, async () => {
+      // 1. Find original COMPONENT_TRACKED event
+      const origTx = await InventoryTransaction.findOne({
         productBarcode: formattedProductBarcode,
-        productId: origTx?.productId,
-        productModel: origTx?.productModel || 'Product',
-        eventType: 'REVERSED_COMPONENT' as const,
         componentBarcode: formattedComponentBarcode,
-        componentId: origTx?.componentId,
-        componentName: binding.componentName,
-        pointName: 'Administrative Correction Terminal',
-        performedBy: adminUser._id,
-        userCode: adminUser.userCode,
-        userName: adminUser.name,
-        reason,
-        reversedTransactionId: origTx?._id || binding.transactionId,
-        createdAt: new Date(),
-      };
+        eventType: 'COMPONENT_TRACKED',
+      })
+        .sort({ createdAt: -1 })
+        .lean();
 
-      [reversalTx] = await InventoryTransaction.create([reversalDoc], {
-        session: session || undefined,
+      if (!origTx) {
+        throw AppError.notFound(
+          `No component tracking record found for component '${formattedComponentBarcode}' on product '${formattedProductBarcode}'.`
+        );
+      }
+
+      // 2. Ensure target transaction is not already reversed
+      const existingReversal = await InventoryTransaction.findOne({
+        reversedTransactionId: origTx._id,
+      });
+      if (existingReversal) {
+        throw AppError.conflict(
+          'This component tracking transaction has already been reversed.',
+          'ALREADY_REVERSED'
+        );
+      }
+
+      // 3. Verify Active Binding
+      const binding = await ComponentBinding.findOne({
+        productBarcode: formattedProductBarcode,
+        componentBarcode: formattedComponentBarcode,
       });
 
-      // Detach component by removing the binding document
-      await ComponentBinding.deleteOne({ _id: binding._id }, { session: session || undefined });
+      if (!binding) {
+        throw AppError.notFound(
+          `Component barcode '${formattedComponentBarcode}' is not actively bound to product '${formattedProductBarcode}'.`
+        );
+      }
 
-      if (session) {
-        await session.commitTransaction();
+      // 4. Lifecycle Check: Cannot reverse component tracking if product has already entered warehouse stock
+      const productState = await this.deriveProductState(formattedProductBarcode);
+      if (productState.isCurrentlyReceived || productState.isCurrentlyDelivered) {
+        throw AppError.badRequest(
+          `Cannot detach component: Product '${formattedProductBarcode}' has already been received into warehouse stock. The receiving operation must be reversed first.`
+        );
       }
-    } catch (err) {
-      if (session) {
-        await session.abortTransaction();
-      }
-      throw err;
-    } finally {
-      if (session) {
-        await session.endSession();
-      }
-    }
 
-    // 5. Audit Log
-    await AuditService.log({
-      action: 'TRANSACTION_REVERSED',
-      entity: 'INVENTORY_TRANSACTION',
-      entityId: String(reversalTx._id),
-      previousValues: {
+      // 4. Create compensating reversal transaction & delete active binding
+      let session: mongoose.ClientSession | null = null;
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+      } catch {
+        session = null;
+      }
+
+      let reversalTx;
+      try {
+        const reversalDoc = {
+          productBarcode: formattedProductBarcode,
+          productId: origTx?.productId,
+          productModel: origTx?.productModel || 'Product',
+          eventType: 'REVERSED_COMPONENT' as const,
+          componentBarcode: formattedComponentBarcode,
+          componentId: origTx?.componentId,
+          componentName: binding.componentName,
+          pointName: 'Administrative Correction Terminal',
+          performedBy: adminUser._id,
+          userCode: adminUser.userCode,
+          userName: adminUser.name,
+          reason: reason.trim(),
+          reversedTransactionId: origTx?._id || binding.transactionId,
+          createdAt: new Date(),
+        };
+
+        [reversalTx] = await InventoryTransaction.create([reversalDoc], {
+          session: session || undefined,
+        });
+
+        // Detach component by removing the binding document
+        await ComponentBinding.deleteOne({ _id: binding._id }, { session: session || undefined });
+
+        if (session) {
+          await session.commitTransaction();
+        }
+      } catch (err) {
+        if (session) {
+          await session.abortTransaction();
+        }
+        throw err;
+      } finally {
+        if (session) {
+          await session.endSession();
+        }
+      }
+
+      // 5. Audit Log
+      await AuditService.log({
+        action: 'TRANSACTION_REVERSED',
+        entity: 'INVENTORY_TRANSACTION',
+        entityId: String(reversalTx._id),
+        previousValues: {
+          productBarcode: formattedProductBarcode,
+          componentBarcode: formattedComponentBarcode,
+          componentName: binding.componentName,
+          status: 'BOUND',
+          targetTransactionId: origTx?._id,
+        },
+        newValues: {
+          status: 'DETACHED_AND_LIBERATED',
+          reason: reason.trim(),
+          reversalTransactionId: reversalTx._id,
+        },
+        performedBy: adminUser,
+      });
+
+      const remainingBindings = await ComponentBinding.find({
         productBarcode: formattedProductBarcode,
-        componentBarcode: formattedComponentBarcode,
-        componentName: binding.componentName,
-        status: 'BOUND',
-      },
-      newValues: {
-        status: 'DETACHED_AND_LIBERATED',
-        reason,
-        reversalTransactionId: reversalTx._id,
-      },
-      performedBy: adminUser,
+      }).lean();
+
+      return {
+        message: `Component '${formattedComponentBarcode}' detached from product '${formattedProductBarcode}' successfully. It can now be tracked again.`,
+        status: remainingBindings.length > 0 ? 'TRACKED' : 'NEW_UNTRACKED',
+        reversalTransaction: reversalTx,
+        liberatedComponentBarcode: formattedComponentBarcode,
+        remainingComponents: remainingBindings,
+      };
     });
-
-    const remainingBindings = await ComponentBinding.find({
-      productBarcode: formattedProductBarcode,
-    }).lean();
-
-    return {
-      message: `Component '${formattedComponentBarcode}' detached from product '${formattedProductBarcode}' successfully. It can now be tracked again.`,
-      reversalTransaction: reversalTx,
-      liberatedComponentBarcode: formattedComponentBarcode,
-      remainingComponents: remainingBindings,
-    };
   }
 
   /**
@@ -951,6 +976,557 @@ export class InventoryService {
     return await DeliveryPoint.find({ isActive: true, isDeleted: false })
       .sort({ pointCode: 1 })
       .lean();
+  }
+
+  /**
+   * Reverse a product receiving transaction (ADMIN only).
+   * Restores product lifecycle state from IN_STOCK back to TRACKED.
+   * Prohibited if product has already been delivered.
+   */
+  static async reverseReceive(
+    input: { productBarcode: string; transactionId?: string; reason: string },
+    adminUser: any
+  ) {
+    const rawBarcode = (input.productBarcode || '').trim().toUpperCase();
+    if (rawBarcode.length < 3) {
+      throw AppError.badRequest('Invalid product barcode format (minimum 3 characters)');
+    }
+
+    if (!input.reason || input.reason.trim().length < 10) {
+      throw AppError.unprocessable('Reversal reason is mandatory and must be at least 10 characters long');
+    }
+
+    return await barcodeMutex.runExclusive(rawBarcode, async () => {
+      // 1. Find target RECEIVED transaction
+      let targetTx;
+      if (input.transactionId && isValidObjectId(input.transactionId)) {
+        targetTx = await InventoryTransaction.findOne({
+          _id: new Types.ObjectId(input.transactionId),
+          productBarcode: rawBarcode,
+          eventType: 'RECEIVED',
+        });
+      } else {
+        targetTx = await InventoryTransaction.findOne({
+          productBarcode: rawBarcode,
+          eventType: 'RECEIVED',
+        }).sort({ createdAt: -1 });
+      }
+
+      if (!targetTx) {
+        throw AppError.notFound(
+          `No active receiving transaction found for product '${rawBarcode}'.`,
+          'TRANSACTION_NOT_FOUND'
+        );
+      }
+
+      // 2. Ensure target transaction is not already reversed
+      const existingReversal = await InventoryTransaction.findOne({
+        reversedTransactionId: targetTx._id,
+      });
+
+      if (existingReversal) {
+        throw AppError.conflict(
+          `This receiving transaction has already been reversed on ${existingReversal.createdAt.toISOString()}. Multiple reversals of the same operation are prohibited.`,
+          'ALREADY_REVERSED'
+        );
+      }
+
+      // 3. Lifecycle Check: Product must not be delivered
+      const productState = await this.deriveProductState(rawBarcode);
+
+      if (productState.isCurrentlyDelivered || productState.status === 'DELIVERED') {
+        throw AppError.unprocessable(
+          `Cannot reverse receiving: Product '${rawBarcode}' has already been delivered from warehouse stock. The delivery transaction must be reversed first before reversing intake.`,
+          'DELIVERY_REVERSAL_REQUIRED'
+        );
+      }
+
+      if (!productState.isCurrentlyReceived || productState.status !== 'IN_STOCK') {
+        throw AppError.unprocessable(
+          `Cannot reverse receiving: Product '${rawBarcode}' is not currently in warehouse stock.`,
+          'NOT_IN_STOCK'
+        );
+      }
+
+      // 4. Create compensating REVERSED_RECEIVE transaction
+      let session: mongoose.ClientSession | null = null;
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+      } catch {
+        session = null;
+      }
+
+      let createdTx;
+      try {
+        const reversalDoc = {
+          productBarcode: targetTx.productBarcode,
+          productId: targetTx.productId,
+          productModel: targetTx.productModel,
+          eventType: 'REVERSED_RECEIVE' as const,
+          pointId: targetTx.pointId,
+          pointName: targetTx.pointName,
+          performedBy: adminUser._id,
+          userCode: adminUser.userCode,
+          userName: adminUser.name,
+          reason: input.reason.trim(),
+          reversedTransactionId: targetTx._id,
+          metadata: {
+            originalReceiveTransactionId: targetTx._id,
+            originalReceivePointName: targetTx.pointName,
+            originalReceivedAt: targetTx.createdAt,
+            reversedAt: new Date(),
+          },
+          createdAt: new Date(),
+        };
+
+        [createdTx] = await InventoryTransaction.create([reversalDoc], {
+          session: session || undefined,
+        });
+
+        if (session) {
+          await session.commitTransaction();
+        }
+      } catch (err: any) {
+        if (session) {
+          await session.abortTransaction();
+        }
+        throw err;
+      } finally {
+        if (session) {
+          await session.endSession();
+        }
+      }
+
+      // 5. Audit Log
+      await AuditService.log({
+        action: 'TRANSACTION_REVERSED',
+        entity: 'INVENTORY_TRANSACTION',
+        entityId: String(createdTx._id),
+        previousValues: {
+          eventType: 'RECEIVED',
+          status: 'IN_STOCK',
+          pointName: targetTx.pointName,
+          targetTransactionId: targetTx._id,
+        },
+        newValues: {
+          eventType: 'REVERSED_RECEIVE',
+          status: 'TRACKED',
+          reason: input.reason.trim(),
+          reversalTransactionId: createdTx._id,
+        },
+        performedBy: adminUser,
+      });
+
+      const updatedState = await this.deriveProductState(rawBarcode);
+
+      return {
+        message: `Receiving transaction for product '${rawBarcode}' successfully reversed. Product removed from stock.`,
+        status: updatedState.status,
+        productBarcode: rawBarcode,
+        productModel: targetTx.productModel,
+        reversalTransaction: createdTx,
+        targetTransaction: targetTx,
+        currentStockState: updatedState,
+      };
+    });
+  }
+
+  /**
+   * Reverse a product delivery transaction (ADMIN only).
+   * Restores product lifecycle state from DELIVERED back to IN_STOCK at origin receive bay.
+   */
+  static async reverseDelivery(
+    input: { productBarcode: string; transactionId?: string; reason: string },
+    adminUser: any
+  ) {
+    const rawBarcode = (input.productBarcode || '').trim().toUpperCase();
+    if (rawBarcode.length < 3) {
+      throw AppError.badRequest('Invalid product barcode format (minimum 3 characters)');
+    }
+
+    if (!input.reason || input.reason.trim().length < 10) {
+      throw AppError.unprocessable('Reversal reason is mandatory and must be at least 10 characters long');
+    }
+
+    return await barcodeMutex.runExclusive(rawBarcode, async () => {
+      // 1. Find target DELIVERED transaction
+      let targetTx;
+      if (input.transactionId && isValidObjectId(input.transactionId)) {
+        targetTx = await InventoryTransaction.findOne({
+          _id: new Types.ObjectId(input.transactionId),
+          productBarcode: rawBarcode,
+          eventType: 'DELIVERED',
+        });
+      } else {
+        targetTx = await InventoryTransaction.findOne({
+          productBarcode: rawBarcode,
+          eventType: 'DELIVERED',
+        }).sort({ createdAt: -1 });
+      }
+
+      if (!targetTx) {
+        throw AppError.notFound(
+          `No active delivery transaction found for product '${rawBarcode}'.`,
+          'TRANSACTION_NOT_FOUND'
+        );
+      }
+
+      // 2. Ensure target transaction is not already reversed
+      const existingReversal = await InventoryTransaction.findOne({
+        reversedTransactionId: targetTx._id,
+      });
+
+      if (existingReversal) {
+        throw AppError.conflict(
+          `This delivery transaction has already been reversed on ${existingReversal.createdAt.toISOString()}. Multiple reversals of the same operation are prohibited.`,
+          'ALREADY_REVERSED'
+        );
+      }
+
+      // 3. Lifecycle Check: Product must currently be in DELIVERED state
+      const productState = await this.deriveProductState(rawBarcode);
+
+      if (!productState.isCurrentlyDelivered || productState.status !== 'DELIVERED') {
+        throw AppError.unprocessable(
+          `Cannot reverse delivery: Product '${rawBarcode}' is not currently in DELIVERED state.`,
+          'NOT_DELIVERED'
+        );
+      }
+
+      // 4. Restore original receive point details
+      const restoredReceivePointName =
+        targetTx.metadata?.originalReceivePointName || 'Warehouse Receiving Bay';
+      const restoredReceivePointId = targetTx.metadata?.originalReceivePointId;
+
+      // 5. Create compensating REVERSED_DELIVERY transaction
+      let session: mongoose.ClientSession | null = null;
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+      } catch {
+        session = null;
+      }
+
+      let createdTx;
+      try {
+        const reversalDoc = {
+          productBarcode: targetTx.productBarcode,
+          productId: targetTx.productId,
+          productModel: targetTx.productModel,
+          eventType: 'REVERSED_DELIVERY' as const,
+          pointId: targetTx.pointId,
+          pointName: targetTx.pointName,
+          performedBy: adminUser._id,
+          userCode: adminUser.userCode,
+          userName: adminUser.name,
+          reason: input.reason.trim(),
+          reversedTransactionId: targetTx._id,
+          metadata: {
+            originalDeliveryTransactionId: targetTx._id,
+            deliveryDockName: targetTx.pointName,
+            restoredToReceivePointName: restoredReceivePointName,
+            restoredToReceivePointId: restoredReceivePointId,
+            deliveredAt: targetTx.createdAt,
+            reversedAt: new Date(),
+          },
+          createdAt: new Date(),
+        };
+
+        [createdTx] = await InventoryTransaction.create([reversalDoc], {
+          session: session || undefined,
+        });
+
+        if (session) {
+          await session.commitTransaction();
+        }
+      } catch (err: any) {
+        if (session) {
+          await session.abortTransaction();
+        }
+        throw err;
+      } finally {
+        if (session) {
+          await session.endSession();
+        }
+      }
+
+      // 6. Audit Log
+      await AuditService.log({
+        action: 'TRANSACTION_REVERSED',
+        entity: 'INVENTORY_TRANSACTION',
+        entityId: String(createdTx._id),
+        previousValues: {
+          eventType: 'DELIVERED',
+          status: 'DELIVERED',
+          targetTransactionId: targetTx._id,
+        },
+        newValues: {
+          eventType: 'REVERSED_DELIVERY',
+          status: 'IN_STOCK',
+          restoredToPoint: restoredReceivePointName,
+          reason: input.reason.trim(),
+          reversalTransactionId: createdTx._id,
+        },
+        performedBy: adminUser,
+      });
+
+      const updatedState = await this.deriveProductState(rawBarcode);
+
+      return {
+        message: `Delivery transaction for product '${rawBarcode}' successfully reversed. Product restored to warehouse stock at '${restoredReceivePointName}'.`,
+        status: updatedState.status,
+        productBarcode: rawBarcode,
+        productModel: targetTx.productModel,
+        reversalTransaction: createdTx,
+        targetTransaction: targetTx,
+        restoredToReceivePoint: restoredReceivePointName,
+        currentStockState: updatedState,
+      };
+    });
+  }
+
+  /**
+   * Unified transaction reversal dispatcher (ADMIN only).
+   */
+  static async reverseTransaction(
+    input: {
+      transactionId?: string;
+      productBarcode?: string;
+      barcode?: string;
+      componentBarcode?: string;
+      eventType?: string;
+      reason: string;
+    },
+    adminUser: any
+  ) {
+    if (!input.reason || input.reason.trim().length < 10) {
+      throw AppError.unprocessable('Reversal reason is mandatory and must be at least 10 characters long');
+    }
+
+    // 1. If transactionId provided, determine exact event type
+    if (input.transactionId && isValidObjectId(input.transactionId)) {
+      const targetTx = await InventoryTransaction.findById(input.transactionId);
+      if (!targetTx) {
+        throw AppError.notFound('Target transaction not found in ledger');
+      }
+
+      if (targetTx.eventType === 'RECEIVED') {
+        return await this.reverseReceive(
+          {
+            productBarcode: targetTx.productBarcode,
+            transactionId: String(targetTx._id),
+            reason: input.reason,
+          },
+          adminUser
+        );
+      } else if (targetTx.eventType === 'DELIVERED') {
+        return await this.reverseDelivery(
+          {
+            productBarcode: targetTx.productBarcode,
+            transactionId: String(targetTx._id),
+            reason: input.reason,
+          },
+          adminUser
+        );
+      } else if (targetTx.eventType === 'COMPONENT_TRACKED') {
+        return await this.reverseComponentTracking(
+          targetTx.productBarcode,
+          targetTx.componentBarcode || '',
+          input.reason,
+          adminUser
+        );
+      } else {
+        throw AppError.badRequest(`Transaction of type '${targetTx.eventType}' cannot be reversed directly.`);
+      }
+    }
+
+    // 2. If barcode provided
+    const targetBarcode = (input.productBarcode || input.barcode || '').trim().toUpperCase();
+    if (!targetBarcode) {
+      throw AppError.badRequest('Either transactionId or productBarcode is required');
+    }
+
+    if (input.componentBarcode) {
+      return await this.reverseComponentTracking(
+        targetBarcode,
+        input.componentBarcode,
+        input.reason,
+        adminUser
+      );
+    }
+
+    const eventType = (input.eventType || '').trim().toUpperCase();
+    if (eventType === 'RECEIVED' || eventType === 'RECEIVE') {
+      return await this.reverseReceive({ productBarcode: targetBarcode, reason: input.reason }, adminUser);
+    } else if (eventType === 'DELIVERED' || eventType === 'DELIVERY') {
+      return await this.reverseDelivery({ productBarcode: targetBarcode, reason: input.reason }, adminUser);
+    }
+
+    // Auto-detect based on current lifecycle state
+    const currentState = await this.deriveProductState(targetBarcode);
+    if (currentState.status === 'DELIVERED') {
+      return await this.reverseDelivery({ productBarcode: targetBarcode, reason: input.reason }, adminUser);
+    } else if (currentState.status === 'IN_STOCK') {
+      return await this.reverseReceive({ productBarcode: targetBarcode, reason: input.reason }, adminUser);
+    } else {
+      throw AppError.unprocessable(
+        `Product '${targetBarcode}' is in '${currentState.status}' state. Please specify eventType ('RECEIVED' or 'DELIVERED') or transactionId to reverse.`
+      );
+    }
+  }
+
+  /**
+   * Retrieve filtered & paginated inventory transactions with reversal annotations.
+   */
+  static async getTransactions(query: {
+    productBarcode?: string;
+    componentBarcode?: string;
+    eventType?: string;
+    userCode?: string;
+    pointName?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const filter: Record<string, any> = {};
+
+    if (query.productBarcode && query.productBarcode.trim()) {
+      filter.productBarcode = query.productBarcode.trim().toUpperCase();
+    }
+
+    if (query.componentBarcode && query.componentBarcode.trim()) {
+      filter.componentBarcode = query.componentBarcode.trim().toUpperCase();
+    }
+
+    if (query.eventType && query.eventType !== 'ALL') {
+      filter.eventType = query.eventType;
+    }
+
+    if (query.userCode && query.userCode.trim()) {
+      filter.userCode = query.userCode.trim();
+    }
+
+    if (query.pointName && query.pointName.trim()) {
+      filter.pointName = new RegExp(query.pointName.trim(), 'i');
+    }
+
+    if (query.search && query.search.trim()) {
+      const regex = new RegExp(query.search.trim(), 'i');
+      filter.$or = [
+        { productBarcode: regex },
+        { componentBarcode: regex },
+        { userCode: regex },
+        { userName: regex },
+        { pointName: regex },
+        { productModel: regex },
+      ];
+    }
+
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const [txs, total] = await Promise.all([
+      InventoryTransaction.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      InventoryTransaction.countDocuments(filter),
+    ]);
+
+    // Check reversal status for this batch of transactions
+    const txIds = txs.map((t) => t._id);
+    const reversalTxs = await InventoryTransaction.find({
+      reversedTransactionId: { $in: txIds },
+    }).lean();
+
+    const reversalMap = new Map<string, any>();
+    for (const rev of reversalTxs) {
+      if (rev.reversedTransactionId) {
+        reversalMap.set(String(rev.reversedTransactionId), rev);
+      }
+    }
+
+    const annotated = txs.map((tx) => {
+      const rev = reversalMap.get(String(tx._id));
+      const isReversalEvent = tx.eventType.startsWith('REVERSED_');
+      const isReversible =
+        !isReversalEvent &&
+        !rev &&
+        (tx.eventType === 'RECEIVED' ||
+          tx.eventType === 'DELIVERED' ||
+          tx.eventType === 'COMPONENT_TRACKED');
+
+      return {
+        ...tx,
+        isReversed: !!rev,
+        isReversalEvent,
+        isReversible,
+        reversalInfo: rev
+          ? {
+              reversalTransactionId: String(rev._id),
+              reversalEventType: rev.eventType,
+              reason: rev.reason,
+              reversedBy: rev.userName,
+              reversedByUserCode: rev.userCode,
+              reversedAt: rev.createdAt,
+            }
+          : undefined,
+      };
+    });
+
+    return {
+      data: annotated,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    };
+  }
+
+  /**
+   * Retrieve a single transaction by ID with complete reversal lineage.
+   */
+  static async getTransactionById(id: string) {
+    if (!isValidObjectId(id)) {
+      throw AppError.badRequest('Invalid transaction ID format');
+    }
+
+    const tx = await InventoryTransaction.findById(id).lean();
+    if (!tx) {
+      throw AppError.notFound('Transaction not found in ledger');
+    }
+
+    // Check if this transaction was reversed
+    const reversal = await InventoryTransaction.findOne({
+      reversedTransactionId: tx._id,
+    }).lean();
+
+    // If this transaction is itself a reversal, find what it reversed
+    let originalTx = null;
+    if (tx.reversedTransactionId) {
+      originalTx = await InventoryTransaction.findById(tx.reversedTransactionId).lean();
+    }
+
+    return {
+      ...tx,
+      isReversed: !!reversal,
+      reversalInfo: reversal
+        ? {
+            reversalTransactionId: String(reversal._id),
+            reversalEventType: reversal.eventType,
+            reason: reversal.reason,
+            reversedBy: reversal.userName,
+            reversedByUserCode: reversal.userCode,
+            reversedAt: reversal.createdAt,
+          }
+        : undefined,
+      originalTransaction: originalTx || undefined,
+    };
   }
 }
 

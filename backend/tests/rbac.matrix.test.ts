@@ -201,6 +201,37 @@ async function runRbacMatrixTests() {
         });
         payload = { productBarcode: rbacChassis, deliveryPoint: 'DP-REF-01' };
       }
+      if (tc.endpoint === '/inventory/reverse' && isAllowed) {
+        const rbacChassis = `RBAC_REV_${Date.now()}`;
+        const rbacComp = `RBAC_REV_COMP_${Date.now()}`;
+        await fetch(`${BASE_URL}/inventory/track-components`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${tokens.ADMIN}`,
+          },
+          body: JSON.stringify({
+            productBarcode: rbacChassis,
+            componentBarcode: rbacComp,
+          }),
+        });
+        await fetch(`${BASE_URL}/inventory/receive`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${tokens.ADMIN}`,
+          },
+          body: JSON.stringify({
+            productBarcode: rbacChassis,
+            receivePoint: 'RP-REF-01',
+          }),
+        });
+        payload = {
+          productBarcode: rbacChassis,
+          eventType: 'RECEIVED',
+          reason: 'Authorized RBAC matrix reversal verification reason',
+        };
+      }
 
       const res = await fetch(`${BASE_URL}${tc.endpoint}`, {
         method: tc.method,

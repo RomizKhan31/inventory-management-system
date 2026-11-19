@@ -103,3 +103,49 @@ export const deliverProductSchema = z
       path: ['deliveryPoint'],
     }
   );
+
+export const reverseReceiveSchema = z.object({
+  productBarcode: z
+    .string()
+    .trim()
+    .min(3, 'Product barcode is required')
+    .transform((val) => val.toUpperCase()),
+  transactionId: z.string().trim().optional(),
+  reason: z
+    .string()
+    .trim()
+    .min(10, 'Reversal reason is mandatory and must be at least 10 characters long')
+    .max(500, 'Reversal reason cannot exceed 500 characters'),
+});
+
+export const reverseDeliverySchema = z.object({
+  productBarcode: z
+    .string()
+    .trim()
+    .min(3, 'Product barcode is required')
+    .transform((val) => val.toUpperCase()),
+  transactionId: z.string().trim().optional(),
+  reason: z
+    .string()
+    .trim()
+    .min(10, 'Reversal reason is mandatory and must be at least 10 characters long')
+    .max(500, 'Reversal reason cannot exceed 500 characters'),
+});
+
+export const reverseUnifiedSchema = z
+  .object({
+    transactionId: z.string().trim().optional(),
+    productBarcode: z.string().trim().optional().transform((val) => val?.toUpperCase()),
+    barcode: z.string().trim().optional().transform((val) => val?.toUpperCase()),
+    componentBarcode: z.string().trim().optional().transform((val) => val?.toUpperCase()),
+    eventType: z.string().trim().optional(),
+    reason: z
+      .string()
+      .trim()
+      .min(10, 'Reversal reason is mandatory and must be at least 10 characters long')
+      .max(500, 'Reversal reason cannot exceed 500 characters'),
+  })
+  .refine((data) => Boolean(data.transactionId || data.productBarcode || data.barcode), {
+    message: 'Either transactionId or productBarcode/barcode must be provided',
+    path: ['productBarcode'],
+  });

@@ -6,6 +6,9 @@ import {
   reverseComponentSchema,
   receiveProductSchema,
   deliverProductSchema,
+  reverseReceiveSchema,
+  reverseDeliverySchema,
+  reverseUnifiedSchema,
 } from './inventory.validation';
 import { sendResponse } from '../../utils/response';
 
@@ -123,6 +126,70 @@ export class InventoryController {
         req.user
       );
       sendResponse(res, 200, result.message, result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Reverse product receiving (ADMIN only)
+   */
+  static async reverseReceive(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = reverseReceiveSchema.parse(req.body);
+      const result = await InventoryService.reverseReceive(validated, req.user);
+      sendResponse(res, 200, result.message, result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Reverse product delivery (ADMIN only)
+   */
+  static async reverseDelivery(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = reverseDeliverySchema.parse(req.body);
+      const result = await InventoryService.reverseDelivery(validated, req.user);
+      sendResponse(res, 200, result.message, result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Unified transaction reversal dispatcher (ADMIN only)
+   */
+  static async reverseTransaction(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = reverseUnifiedSchema.parse(req.body);
+      const result = await InventoryService.reverseTransaction(validated, req.user);
+      sendResponse(res, 200, result.message, result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * List/search inventory transactions with reversal annotations
+   */
+  static async getTransactions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await InventoryService.getTransactions(req.query);
+      sendResponse(res, 200, 'Inventory transactions retrieved successfully', result.data, result.pagination);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Get single transaction details by ID
+   */
+  static async getTransactionById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const result = await InventoryService.getTransactionById(id);
+      sendResponse(res, 200, 'Transaction details retrieved successfully', result);
     } catch (err) {
       next(err);
     }

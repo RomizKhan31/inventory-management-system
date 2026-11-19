@@ -73,9 +73,38 @@ router.post(
 );
 
 /**
- * 5. Reversals:
- * Gated to ADMIN exclusively.
+ * 5. Transaction Ledger Enquiries:
+ * Accessible to operators and administrators.
  */
+router.get(
+  '/transactions',
+  requireRole('ADMIN', 'REPORT_VIEWER', 'RECEIVE_USER', 'DELIVERY_USER', 'COMPONENT_TRACKER'),
+  InventoryController.getTransactions
+);
+
+router.get(
+  '/transactions/:id',
+  requireRole('ADMIN', 'REPORT_VIEWER', 'RECEIVE_USER', 'DELIVERY_USER', 'COMPONENT_TRACKER'),
+  InventoryController.getTransactionById
+);
+
+/**
+ * 6. Reversals & Corrections:
+ * Gated to ADMIN exclusively (requirePermission('OPERATION_REVERSE')).
+ * Every reversal creates an immutable compensating record with a mandatory audit reason.
+ */
+router.post(
+  '/reverse-receive',
+  requirePermission('OPERATION_REVERSE'),
+  InventoryController.reverseReceive
+);
+
+router.post(
+  '/reverse-delivery',
+  requirePermission('OPERATION_REVERSE'),
+  InventoryController.reverseDelivery
+);
+
 router.post(
   '/reverse-component',
   requirePermission('OPERATION_REVERSE'),
@@ -85,18 +114,7 @@ router.post(
 router.post(
   '/reverse',
   requirePermission('OPERATION_REVERSE'),
-  async (req: Request, res: Response, next) => {
-    // If body contains componentBarcode, route to component reversal
-    if (req.body.componentBarcode) {
-      return InventoryController.reverseComponentTracking(req, res, next);
-    }
-    // Generic reversal acknowledgement for RBAC test
-    sendResponse(res, 200, 'Authorized: Reversal operation permission verified', {
-      operator: req.user?.userCode,
-      role: req.user?.role,
-      action: 'REVERSE_TRANSACTION',
-    });
-  }
+  InventoryController.reverseTransaction
 );
 
 export const inventoryRoutes = router;
