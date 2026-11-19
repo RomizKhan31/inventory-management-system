@@ -234,7 +234,12 @@ export default function ProductDeliveryPage() {
     setIsConfirmDialogOpen(true);
   };
 
-  // 3. Confirm and Execute Atomic Delivery Transaction
+  /**
+   * 3. Confirm and Execute Atomic Delivery Transaction:
+   * Dispatches payload to POST /api/v1/inventory/deliver-product (also aliased as /inventory/deliver).
+   * Authorized for DELIVERY_USER and ADMIN roles.
+   * Atomically dispatches verified in-stock inventory out of warehouse stock through the chosen dock.
+   */
   const handleConfirmDelivery = async () => {
     if (!productData || !selectedPointId) return;
 

@@ -64,7 +64,20 @@ router.post(
 
 /**
  * 3. Product Receiving:
- * Gated to RECEIVE_USER and ADMIN.
+ * Gated to RECEIVE_USER and ADMIN (enforced via requirePermission('OPERATION_RECEIVE')).
+ * 
+ * Supports both canonical endpoint '/receive' and descriptive workstation route alias '/receive-product':
+ * - POST /api/v1/inventory/receive
+ * - POST /api/v1/inventory/receive-product
+ * 
+ * Payload Contract:
+ * - productBarcode (string): Unique finished chassis serial (e.g. '2440701AK2057')
+ * - receivePointId (string): Mongo ID or pointCode of the active intake bay
+ * - notes (string, optional): Pallet / shift / QC notes
+ * 
+ * Atomic Guarantee:
+ * Enforces component tracking prerequisite, prevents duplicate receiving of already in-stock units,
+ * and maintains immutable append-only transaction history.
  */
 router.get(
   '/receive-points',
@@ -78,9 +91,27 @@ router.post(
   InventoryController.receiveProduct
 );
 
+router.post(
+  '/receive-product',
+  requirePermission('OPERATION_RECEIVE'),
+  InventoryController.receiveProduct
+);
+
 /**
  * 4. Product Delivery:
- * Gated to DELIVERY_USER and ADMIN.
+ * Gated to DELIVERY_USER and ADMIN (enforced via requirePermission('OPERATION_DELIVER')).
+ * 
+ * Supports both canonical endpoint '/deliver' and descriptive workstation route alias '/deliver-product':
+ * - POST /api/v1/inventory/deliver
+ * - POST /api/v1/inventory/deliver-product
+ * 
+ * Payload Contract:
+ * - productBarcode (string): Unique finished chassis serial
+ * - deliveryPointId (string): Mongo ID or pointCode of the outbound shipping dock
+ * - notes (string, optional): Truck / bill of lading / order notes
+ * 
+ * Invariants Enforced:
+ * Unit must be currently IN_STOCK; preserves original intake receive point in ledger history.
  */
 router.get(
   '/delivery-points',
@@ -90,6 +121,12 @@ router.get(
 
 router.post(
   '/deliver',
+  requirePermission('OPERATION_DELIVER'),
+  InventoryController.deliverProduct
+);
+
+router.post(
+  '/deliver-product',
   requirePermission('OPERATION_DELIVER'),
   InventoryController.deliverProduct
 );

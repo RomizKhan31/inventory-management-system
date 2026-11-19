@@ -224,7 +224,12 @@ export default function ProductReceivingPage() {
     setIsConfirmDialogOpen(true);
   };
 
-  // 3. Confirm and Execute Atomic Receiving Transaction
+  /**
+   * 3. Confirm and Execute Atomic Receiving Transaction:
+   * Dispatches payload to POST /api/v1/inventory/receive-product (also aliased as /inventory/receive).
+   * Authorized for RECEIVE_USER and ADMIN roles.
+   * Atomically admits verified tracked chassis into warehouse inventory at the designated receive point.
+   */
   const handleConfirmReceive = async () => {
     if (!productData || !selectedPointId) return;
 
