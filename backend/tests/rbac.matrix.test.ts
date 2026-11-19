@@ -174,6 +174,33 @@ async function runRbacMatrixTests() {
         });
         payload = { productBarcode: rbacChassis, receivePoint: 'RP-REF-01' };
       }
+      if (tc.endpoint === '/inventory/deliver' && isAllowed) {
+        const rbacChassis = `RBAC_DEL_${role}_${Date.now()}`;
+        const rbacComp = `RBAC_DEL_COMP_${role}_${Date.now()}`;
+        await fetch(`${BASE_URL}/inventory/track-components`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${tokens.ADMIN}`,
+          },
+          body: JSON.stringify({
+            productBarcode: rbacChassis,
+            componentBarcode: rbacComp,
+          }),
+        });
+        await fetch(`${BASE_URL}/inventory/receive`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${tokens.ADMIN}`,
+          },
+          body: JSON.stringify({
+            productBarcode: rbacChassis,
+            receivePoint: 'RP-REF-01',
+          }),
+        });
+        payload = { productBarcode: rbacChassis, deliveryPoint: 'DP-REF-01' };
+      }
 
       const res = await fetch(`${BASE_URL}${tc.endpoint}`, {
         method: tc.method,

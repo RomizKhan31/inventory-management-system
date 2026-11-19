@@ -25,7 +25,8 @@
     "test:admin": "tsx tests/admin.management.test.ts",
     "test:tracking": "tsx tests/component.tracking.test.ts",
     "test:receiving": "tsx tests/product.receiving.test.ts",
-    "test": "tsx tests/auth.integration.test.ts && tsx tests/deactivation.integration.test.ts && tsx tests/rbac.matrix.test.ts && tsx tests/admin.management.test.ts && tsx tests/component.tracking.test.ts && tsx tests/product.receiving.test.ts"
+    "test:delivery": "tsx tests/product.delivery.test.ts",
+    "test": "tsx tests/auth.integration.test.ts && tsx tests/deactivation.integration.test.ts && tsx tests/rbac.matrix.test.ts && tsx tests/admin.management.test.ts && tsx tests/component.tracking.test.ts && tsx tests/product.receiving.test.ts && tsx tests/product.delivery.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -5,6 +5,7 @@ import {
   Product,
   Component,
   ReceivePoint,
+  DeliveryPoint,
   IComponentBinding,
 } from '../../database/models';
 import { AppError } from '../../utils/AppError';
@@ -34,6 +35,14 @@ export interface ReceiveProductInput {
   stationNotes?: string;
 }
 
+export interface DeliverProductInput {
+  productBarcode: string;
+  deliveryPointId?: string;
+  deliveryPointCode?: string;
+  deliveryPoint?: string;
+  stationNotes?: string;
+}
+
 export class InventoryService {
   /**
    * Derive the current operational lifecycle state of a product barcode
@@ -53,6 +62,8 @@ export class InventoryService {
 
     let productModel = '';
     let productId: Types.ObjectId | undefined = undefined;
+    let lastReceiveTx: any = null;
+    let lastDeliveryTx: any = null;
 
     for (const tx of history) {
       if (tx.productModel) productModel = tx.productModel;
@@ -67,12 +78,14 @@ export class InventoryService {
           break;
         case 'RECEIVED':
           receivedCount++;
+          lastReceiveTx = tx;
           break;
         case 'REVERSED_RECEIVE':
           reversedReceivedCount++;
           break;
         case 'DELIVERED':
           deliveredCount++;
+          lastDeliveryTx = tx;
           break;
         case 'REVERSED_DELIVERY':
           reversedDeliveredCount++;
@@ -114,6 +127,33 @@ export class InventoryService {
       hasActiveComponents,
       isCurrentlyReceived,
       isCurrentlyDelivered,
+      currentReceivePoint:
+        isCurrentlyReceived && lastReceiveTx
+          ? {
+              pointId: lastReceiveTx.pointId ? String(lastReceiveTx.pointId) : undefined,
+              pointName: lastReceiveTx.pointName,
+              pointCode: lastReceiveTx.metadata?.receivePointCode,
+              location: lastReceiveTx.metadata?.location,
+              receivedAt: lastReceiveTx.createdAt,
+              receivedBy: lastReceiveTx.userName,
+              userCode: lastReceiveTx.userCode,
+              transactionId: String(lastReceiveTx._id),
+            }
+          : undefined,
+      lastDelivery:
+        isCurrentlyDelivered && lastDeliveryTx
+          ? {
+              pointId: lastDeliveryTx.pointId ? String(lastDeliveryTx.pointId) : undefined,
+              pointName: lastDeliveryTx.pointName,
+              pointCode: lastDeliveryTx.metadata?.deliveryPointCode,
+              location: lastDeliveryTx.metadata?.deliveryLocation || lastDeliveryTx.metadata?.location,
+              deliveredAt: lastDeliveryTx.createdAt,
+              deliveredBy: lastDeliveryTx.userName,
+              userCode: lastDeliveryTx.userCode,
+              originalReceivePointName: lastDeliveryTx.metadata?.originalReceivePointName,
+              transactionId: String(lastDeliveryTx._id),
+            }
+          : undefined,
       attachedComponents: activeBindings,
       historyCount: history.length,
     };
@@ -706,6 +746,209 @@ export class InventoryService {
    */
   static async getActiveReceivePoints() {
     return await ReceivePoint.find({ isActive: true, isDeleted: false })
+      .sort({ pointCode: 1 })
+      .lean();
+  }
+
+  /**
+   * Issue and deliver a product from available warehouse stock at an authorized delivery point.
+   * Concurrency-safe, atomic, append-only ledger transaction.
+   * Preserves the original receive point reference in the delivery transaction metadata.
+   */
+  static async deliverProduct(input: DeliverProductInput, operatorUser: any) {
+    const rawBarcode = (input.productBarcode || '').trim().toUpperCase();
+    if (rawBarcode.length < 3) {
+      throw AppError.badRequest('Invalid product barcode format (minimum 3 characters)');
+    }
+
+    return await barcodeMutex.runExclusive(rawBarcode, async () => {
+      // 1. Derive current product lifecycle state from immutable ledger
+      const productState = await this.deriveProductState(rawBarcode);
+
+      // Business Rule: A product that has never completed component tracking cannot be delivered
+      if (!productState.hasActiveComponents || productState.status === 'NEW_UNTRACKED') {
+        throw AppError.unprocessable(
+          `Cannot deliver product '${rawBarcode}': Chassis has not undergone component tracking and has never been received into warehouse stock.`,
+          'TRACKING_REQUIRED'
+        );
+      }
+
+      // Business Rule: A product cannot be delivered twice
+      if (productState.isCurrentlyDelivered || productState.status === 'DELIVERED') {
+        throw AppError.conflict(
+          `Product '${rawBarcode}' has already been delivered/dispatched from warehouse stock. Duplicate delivery is strictly prohibited.`,
+          'ALREADY_DELIVERED'
+        );
+      }
+
+      // Business Rule: A product that has never been received or whose receiving was reversed cannot be delivered
+      if (!productState.isCurrentlyReceived || productState.status !== 'IN_STOCK') {
+        throw AppError.unprocessable(
+          `Cannot deliver product '${rawBarcode}': Product is not currently in warehouse stock. It must be admitted into stock at a receive point prior to delivery.`,
+          'NOT_IN_STOCK'
+        );
+      }
+
+      // 2. Validate Delivery Point Master Record
+      const pointIdInput = input.deliveryPointId;
+      const pointCodeInput = (input.deliveryPointCode || input.deliveryPoint || '').trim().toUpperCase();
+      const pointNameInput = (input.deliveryPoint || '').trim();
+
+      const pointQuery: any = { isDeleted: false };
+      const orClauses: any[] = [];
+
+      if (pointIdInput && isValidObjectId(pointIdInput)) {
+        orClauses.push({ _id: new Types.ObjectId(pointIdInput) });
+      }
+      if (input.deliveryPoint && isValidObjectId(input.deliveryPoint)) {
+        orClauses.push({ _id: new Types.ObjectId(input.deliveryPoint) });
+      }
+      if (pointCodeInput) {
+        orClauses.push({ pointCode: pointCodeInput });
+      }
+      if (pointNameInput) {
+        orClauses.push({ name: pointNameInput });
+      }
+
+      if (orClauses.length === 0) {
+        throw AppError.badRequest('A valid delivery point identifier (ID, code, or name) is required');
+      }
+
+      pointQuery.$or = orClauses;
+      const deliveryPoint = await DeliveryPoint.findOne(pointQuery);
+
+      if (!deliveryPoint) {
+        throw AppError.notFound(
+          `Delivery point '${pointCodeInput || pointNameInput || pointIdInput}' not found in master catalog.`,
+          'DELIVERY_POINT_NOT_FOUND'
+        );
+      }
+
+      if (!deliveryPoint.isActive) {
+        throw AppError.badRequest(
+          `Delivery point '${deliveryPoint.name}' (${deliveryPoint.pointCode}) is currently deactivated and cannot accept dispatch operations.`,
+          'DELIVERY_POINT_INACTIVE'
+        );
+      }
+
+      // 3. Preserve Original Receive Point Reference
+      const originReceiveTx = await InventoryTransaction.findOne({
+        productBarcode: rawBarcode,
+        eventType: 'RECEIVED',
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      const originalReceivePoint = {
+        id: originReceiveTx?.pointId ? String(originReceiveTx.pointId) : productState.currentReceivePoint?.pointId,
+        name: originReceiveTx?.pointName || productState.currentReceivePoint?.pointName || 'Warehouse Receiving Bay',
+        code: originReceiveTx?.metadata?.receivePointCode || productState.currentReceivePoint?.pointCode,
+        location: originReceiveTx?.metadata?.location || productState.currentReceivePoint?.location,
+        receivedAt: originReceiveTx?.createdAt || productState.currentReceivePoint?.receivedAt,
+        receivedBy: originReceiveTx?.userName || productState.currentReceivePoint?.receivedBy,
+        userCode: originReceiveTx?.userCode || productState.currentReceivePoint?.userCode,
+      };
+
+      // 4. Resolve Product Model Snapshot & Master Reference
+      let productModel = productState.productModel;
+      let productId = productState.productId;
+
+      if (!productModel || !productId) {
+        const masterProduct = await Product.findOne({
+          $or: [
+            { barcode: rawBarcode },
+            { productCode: rawBarcode },
+            { _id: isValidObjectId(productId) ? productId : undefined },
+          ],
+          isDeleted: false,
+        }).lean();
+
+        if (masterProduct) {
+          productModel = masterProduct.name;
+          productId = String(masterProduct._id);
+        } else {
+          productModel = productModel || 'Product';
+        }
+      }
+
+      // 5. Atomic Append to Immutable Transaction Ledger
+      let session: mongoose.ClientSession | null = null;
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+      } catch {
+        session = null;
+      }
+
+      let createdTx;
+      try {
+        const txDoc = {
+          productBarcode: rawBarcode,
+          productId: isValidObjectId(productId) ? new Types.ObjectId(productId) : undefined,
+          productModel,
+          eventType: 'DELIVERED' as const,
+          pointId: deliveryPoint._id,
+          pointName: deliveryPoint.name,
+          performedBy: operatorUser._id,
+          userCode: operatorUser.userCode,
+          userName: operatorUser.name,
+          metadata: {
+            deliveryPointCode: deliveryPoint.pointCode,
+            deliveryLocation: deliveryPoint.location,
+            originalReceivePointId: originalReceivePoint.id ? new Types.ObjectId(originalReceivePoint.id) : undefined,
+            originalReceivePointName: originalReceivePoint.name,
+            originalReceivePointCode: originalReceivePoint.code,
+            originalReceivedAt: originalReceivePoint.receivedAt,
+            originalReceivedBy: originalReceivePoint.receivedBy,
+            originalReceiveUserCode: originalReceivePoint.userCode,
+            stationNotes: input.stationNotes,
+            deliveredAt: new Date(),
+          },
+          createdAt: new Date(),
+        };
+
+        [createdTx] = await InventoryTransaction.create([txDoc], {
+          session: session || undefined,
+        });
+
+        if (session) {
+          await session.commitTransaction();
+        }
+      } catch (err: any) {
+        if (session) {
+          await session.abortTransaction();
+        }
+        throw err;
+      } finally {
+        if (session) {
+          await session.endSession();
+        }
+      }
+
+      return {
+        message: `Product '${rawBarcode}' successfully delivered from '${originalReceivePoint.name}' via '${deliveryPoint.name}'.`,
+        status: 'DELIVERED',
+        productBarcode: rawBarcode,
+        productModel,
+        deliveryPoint: {
+          id: deliveryPoint._id,
+          pointCode: deliveryPoint.pointCode,
+          name: deliveryPoint.name,
+          location: deliveryPoint.location,
+        },
+        originalReceivePoint,
+        transaction: createdTx,
+        attachedComponentsCount: productState.attachedComponents.length,
+        attachedComponents: productState.attachedComponents,
+      };
+    });
+  }
+
+  /**
+   * Retrieve list of active delivery points for workstation selector.
+   */
+  static async getActiveDeliveryPoints() {
+    return await DeliveryPoint.find({ isActive: true, isDeleted: false })
       .sort({ pointCode: 1 })
       .lean();
   }

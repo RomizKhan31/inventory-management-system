@@ -82,3 +82,24 @@ export const receiveProductSchema = z
       path: ['receivePoint'],
     }
   );
+
+export const deliverProductSchema = z
+  .object({
+    productBarcode: z
+      .string()
+      .trim()
+      .min(3, 'Product barcode must be at least 3 characters')
+      .max(50, 'Product barcode cannot exceed 50 characters')
+      .transform((val) => val.toUpperCase()),
+    deliveryPointId: z.string().trim().optional(),
+    deliveryPointCode: z.string().trim().optional(),
+    deliveryPoint: z.string().trim().optional(),
+    stationNotes: z.string().trim().max(500, 'Station notes cannot exceed 500 characters').optional(),
+  })
+  .refine(
+    (data) => Boolean(data.deliveryPointId || data.deliveryPointCode || data.deliveryPoint),
+    {
+      message: 'Delivery point identifier (ID, code, or name) is required',
+      path: ['deliveryPoint'],
+    }
+  );

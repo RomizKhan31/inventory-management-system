@@ -60,16 +60,16 @@ router.post(
  * 4. Product Delivery:
  * Gated to DELIVERY_USER and ADMIN.
  */
+router.get(
+  '/delivery-points',
+  requirePermission('OPERATION_DELIVER'),
+  InventoryController.listActiveDeliveryPoints
+);
+
 router.post(
   '/deliver',
   requirePermission('OPERATION_DELIVER'),
-  async (req: Request, res: Response) => {
-    sendResponse(res, 200, 'Authorized: Product delivery operation permission verified', {
-      operator: req.user?.userCode,
-      role: req.user?.role,
-      action: 'DELIVER_STOCK',
-    });
-  }
+  InventoryController.deliverProduct
 );
 
 /**
