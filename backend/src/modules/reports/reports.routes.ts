@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticate, requirePermission } from '../../middlewares/auth.middleware';
 import { sendResponse } from '../../utils/response';
-import { AuditLog } from '../../database/models/AuditLog';
+import { ReportsController } from './reports.controller';
 import { AuditService } from '../audit/audit.service';
 
 const router = Router();
@@ -17,13 +17,7 @@ router.use(authenticate);
 router.get(
   '/stock-details',
   requirePermission('REPORT_VIEW'),
-  async (req: Request, res: Response) => {
-    sendResponse(res, 200, 'Authorized: Stock details report access granted', {
-      viewer: req.user?.userCode,
-      role: req.user?.role,
-      report: 'STOCK_DETAILS',
-    });
-  }
+  ReportsController.getStockDetails
 );
 
 /**
@@ -33,13 +27,7 @@ router.get(
 router.get(
   '/summary',
   requirePermission('REPORT_VIEW'),
-  async (req: Request, res: Response) => {
-    sendResponse(res, 200, 'Authorized: Date-range summary report access granted', {
-      viewer: req.user?.userCode,
-      role: req.user?.role,
-      report: 'SUMMARY_REPORT',
-    });
-  }
+  ReportsController.getSummary
 );
 
 /**
@@ -49,14 +37,7 @@ router.get(
 router.get(
   '/barcode-history/:barcode',
   requirePermission('REPORT_VIEW'),
-  async (req: Request, res: Response) => {
-    sendResponse(res, 200, 'Authorized: Barcode history report access granted', {
-      barcode: req.params.barcode,
-      viewer: req.user?.userCode,
-      role: req.user?.role,
-      report: 'BARCODE_HISTORY',
-    });
-  }
+  ReportsController.getBarcodeHistory
 );
 
 /**
@@ -66,13 +47,7 @@ router.get(
 router.get(
   '/export',
   requirePermission('REPORT_EXPORT'),
-  async (req: Request, res: Response) => {
-    sendResponse(res, 200, 'Authorized: Report export access granted', {
-      viewer: req.user?.userCode,
-      role: req.user?.role,
-      action: 'EXPORT',
-    });
-  }
+  ReportsController.exportReport
 );
 
 /**
