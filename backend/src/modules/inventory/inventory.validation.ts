@@ -61,3 +61,24 @@ export const reverseComponentSchema = z.object({
     .trim()
     .min(10, 'Reversal reason is mandatory and must be at least 10 characters long'),
 });
+
+export const receiveProductSchema = z
+  .object({
+    productBarcode: z
+      .string()
+      .trim()
+      .min(3, 'Product barcode must be at least 3 characters')
+      .max(50, 'Product barcode cannot exceed 50 characters')
+      .transform((val) => val.toUpperCase()),
+    receivePointId: z.string().trim().optional(),
+    receivePointCode: z.string().trim().optional(),
+    receivePoint: z.string().trim().optional(),
+    stationNotes: z.string().trim().max(500, 'Station notes cannot exceed 500 characters').optional(),
+  })
+  .refine(
+    (data) => Boolean(data.receivePointId || data.receivePointCode || data.receivePoint),
+    {
+      message: 'Receive point identifier (ID, code, or name) is required',
+      path: ['receivePoint'],
+    }
+  );

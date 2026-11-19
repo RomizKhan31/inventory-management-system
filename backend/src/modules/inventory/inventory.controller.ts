@@ -4,6 +4,7 @@ import {
   trackSingleComponentSchema,
   trackBatchComponentsSchema,
   reverseComponentSchema,
+  receiveProductSchema,
 } from './inventory.validation';
 import { sendResponse } from '../../utils/response';
 
@@ -53,6 +54,31 @@ export class InventoryController {
         `Component(s) successfully attached to product '${result.productBarcode}'`,
         result
       );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Receive a tracked product into warehouse inventory stock
+   */
+  static async receiveProduct(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = receiveProductSchema.parse(req.body);
+      const result = await InventoryService.receiveProduct(validated, req.user);
+      sendResponse(res, 201, result.message, result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * List active receive points for workstation selector dropdown
+   */
+  static async listActiveReceivePoints(req: Request, res: Response, next: NextFunction) {
+    try {
+      const points = await InventoryService.getActiveReceivePoints();
+      sendResponse(res, 200, 'Active receive points retrieved successfully', points);
     } catch (err) {
       next(err);
     }

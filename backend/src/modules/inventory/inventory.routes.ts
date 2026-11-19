@@ -44,16 +44,16 @@ router.post(
  * 3. Product Receiving:
  * Gated to RECEIVE_USER and ADMIN.
  */
+router.get(
+  '/receive-points',
+  requirePermission('OPERATION_RECEIVE'),
+  InventoryController.listActiveReceivePoints
+);
+
 router.post(
   '/receive',
   requirePermission('OPERATION_RECEIVE'),
-  async (req: Request, res: Response) => {
-    sendResponse(res, 200, 'Authorized: Product receiving operation permission verified', {
-      operator: req.user?.userCode,
-      role: req.user?.role,
-      action: 'RECEIVE_STOCK',
-    });
-  }
+  InventoryController.receiveProduct
 );
 
 /**

@@ -4,10 +4,12 @@ import {
   ComponentBinding,
   Product,
   Component,
+  ReceivePoint,
   IComponentBinding,
 } from '../../database/models';
 import { AppError } from '../../utils/AppError';
 import { AuditService } from '../audit/audit.service';
+import { barcodeMutex } from '../../utils/mutex';
 
 export interface ComponentTrackingInput {
   productBarcode: string;
@@ -22,6 +24,14 @@ export interface ComponentTrackingInput {
     componentId?: string;
     componentName?: string;
   }>;
+}
+
+export interface ReceiveProductInput {
+  productBarcode: string;
+  receivePointId?: string;
+  receivePointCode?: string;
+  receivePoint?: string;
+  stationNotes?: string;
 }
 
 export class InventoryService {
@@ -521,6 +531,183 @@ export class InventoryService {
       liberatedComponentBarcode: formattedComponentBarcode,
       remainingComponents: remainingBindings,
     };
+  }
+
+  /**
+   * Receive a tracked product into warehouse inventory stock at an authorized receive point.
+   * Concurrency-safe, atomic, append-only ledger transaction.
+   */
+  static async receiveProduct(input: ReceiveProductInput, operatorUser: any) {
+    const rawBarcode = (input.productBarcode || '').trim().toUpperCase();
+    if (rawBarcode.length < 3) {
+      throw AppError.badRequest('Invalid product barcode format (minimum 3 characters)');
+    }
+
+    return await barcodeMutex.runExclusive(rawBarcode, async () => {
+      // 1. Derive current product lifecycle state from immutable ledger
+      const productState = await this.deriveProductState(rawBarcode);
+
+      // Business Rule: A product must have completed component tracking before receiving
+      if (!productState.hasActiveComponents || productState.status === 'NEW_UNTRACKED') {
+        throw AppError.unprocessable(
+          `Cannot receive product '${rawBarcode}': Chassis has not undergone component tracking. All required modular components must be bound before warehouse stock admission.`,
+          'TRACKING_REQUIRED'
+        );
+      }
+
+      // Business Rule: A delivered product cannot be received again without a valid reversal workflow
+      if (productState.isCurrentlyDelivered || productState.status === 'DELIVERED') {
+        throw AppError.unprocessable(
+          `Cannot receive product '${rawBarcode}': Product has already been dispatched/delivered from warehouse stock. Re-intake requires an administrative reversal workflow.`,
+          'ALREADY_DELIVERED'
+        );
+      }
+
+      // Business Rule: A product cannot be received twice while already in stock
+      if (productState.isCurrentlyReceived || productState.status === 'IN_STOCK') {
+        throw AppError.conflict(
+          `Product '${rawBarcode}' is already in stock. Duplicate receiving is strictly prohibited.`,
+          'ALREADY_IN_STOCK'
+        );
+      }
+
+      // 2. Validate Receive Point Master Record
+      const pointIdInput = input.receivePointId;
+      const pointCodeInput = (input.receivePointCode || input.receivePoint || '').trim().toUpperCase();
+      const pointNameInput = (input.receivePoint || '').trim();
+
+      const pointQuery: any = { isDeleted: false };
+      const orClauses: any[] = [];
+
+      if (pointIdInput && isValidObjectId(pointIdInput)) {
+        orClauses.push({ _id: new Types.ObjectId(pointIdInput) });
+      }
+      if (input.receivePoint && isValidObjectId(input.receivePoint)) {
+        orClauses.push({ _id: new Types.ObjectId(input.receivePoint) });
+      }
+      if (pointCodeInput) {
+        orClauses.push({ pointCode: pointCodeInput });
+      }
+      if (pointNameInput) {
+        orClauses.push({ name: pointNameInput });
+      }
+
+      if (orClauses.length === 0) {
+        throw AppError.badRequest('A valid receive point identifier (ID, code, or name) is required');
+      }
+
+      pointQuery.$or = orClauses;
+      const receivePoint = await ReceivePoint.findOne(pointQuery);
+
+      if (!receivePoint) {
+        throw AppError.notFound(
+          `Receive point '${pointCodeInput || pointNameInput || pointIdInput}' not found in master catalog.`,
+          'RECEIVE_POINT_NOT_FOUND'
+        );
+      }
+
+      if (!receivePoint.isActive) {
+        throw AppError.badRequest(
+          `Receive point '${receivePoint.name}' (${receivePoint.pointCode}) is currently deactivated and cannot accept intake.`,
+          'RECEIVE_POINT_INACTIVE'
+        );
+      }
+
+      // 3. Resolve Product Model Snapshot & Master Reference
+      let productModel = productState.productModel;
+      let productId = productState.productId;
+
+      if (!productModel || !productId) {
+        const masterProduct = await Product.findOne({
+          $or: [
+            { barcode: rawBarcode },
+            { productCode: rawBarcode },
+            { _id: isValidObjectId(productId) ? productId : undefined },
+          ],
+          isDeleted: false,
+        }).lean();
+
+        if (masterProduct) {
+          productModel = masterProduct.name;
+          productId = String(masterProduct._id);
+        } else {
+          productModel = productModel || 'Product';
+        }
+      }
+
+      // 4. Atomic Append to Immutable Transaction Ledger
+      let session: mongoose.ClientSession | null = null;
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+      } catch {
+        session = null;
+      }
+
+      let createdTx;
+      try {
+        const txDoc = {
+          productBarcode: rawBarcode,
+          productId: isValidObjectId(productId) ? new Types.ObjectId(productId) : undefined,
+          productModel,
+          eventType: 'RECEIVED' as const,
+          pointId: receivePoint._id,
+          pointName: receivePoint.name,
+          performedBy: operatorUser._id,
+          userCode: operatorUser.userCode,
+          userName: operatorUser.name,
+          metadata: {
+            receivePointCode: receivePoint.pointCode,
+            location: receivePoint.location,
+            stationNotes: input.stationNotes,
+            receivedAt: new Date(),
+          },
+          createdAt: new Date(),
+        };
+
+        [createdTx] = await InventoryTransaction.create([txDoc], {
+          session: session || undefined,
+        });
+
+        if (session) {
+          await session.commitTransaction();
+        }
+      } catch (err: any) {
+        if (session) {
+          await session.abortTransaction();
+        }
+        throw err;
+      } finally {
+        if (session) {
+          await session.endSession();
+        }
+      }
+
+      return {
+        message: `Product '${rawBarcode}' successfully received into stock at '${receivePoint.name}'.`,
+        status: 'IN_STOCK',
+        productBarcode: rawBarcode,
+        productModel,
+        receivePoint: {
+          id: receivePoint._id,
+          pointCode: receivePoint.pointCode,
+          name: receivePoint.name,
+          location: receivePoint.location,
+        },
+        transaction: createdTx,
+        attachedComponentsCount: productState.attachedComponents.length,
+        attachedComponents: productState.attachedComponents,
+      };
+    });
+  }
+
+  /**
+   * Retrieve list of active receive points for workstation selector.
+   */
+  static async getActiveReceivePoints() {
+    return await ReceivePoint.find({ isActive: true, isDeleted: false })
+      .sort({ pointCode: 1 })
+      .lean();
   }
 }
 

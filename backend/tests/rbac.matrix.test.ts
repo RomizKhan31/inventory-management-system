@@ -158,6 +158,22 @@ async function runRbacMatrixTests() {
       if (payload && payload.componentBarcode) {
         payload = { ...payload, componentBarcode: `${payload.componentBarcode}_${role}_${Date.now()}` };
       }
+      if (tc.endpoint === '/inventory/receive' && isAllowed) {
+        const rbacChassis = `RBAC_RCV_${role}_${Date.now()}`;
+        const rbacComp = `RBAC_RCV_COMP_${role}_${Date.now()}`;
+        await fetch(`${BASE_URL}/inventory/track-components`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${tokens.ADMIN}`,
+          },
+          body: JSON.stringify({
+            productBarcode: rbacChassis,
+            componentBarcode: rbacComp,
+          }),
+        });
+        payload = { productBarcode: rbacChassis, receivePoint: 'RP-REF-01' };
+      }
 
       const res = await fetch(`${BASE_URL}${tc.endpoint}`, {
         method: tc.method,
