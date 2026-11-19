@@ -81,17 +81,29 @@ export class MasterDataService {
       throw AppError.conflict(`Product code '${data.productCode}' already exists`);
     }
 
-    if (data.barcode) {
-      const existingBarcode = await Product.findOne({ barcode: data.barcode });
+    const payload: any = { ...data, isDeleted: false };
+
+    // Industrial Safety Rule:
+    // If barcode is not provided, delete the property so Mongoose does not insert
+    // an empty string or null into MongoDB, preserving the sparse unique index.
+    if (!payload.barcode || typeof payload.barcode !== 'string' || payload.barcode.trim() === '') {
+      delete payload.barcode;
+    } else {
+      payload.barcode = payload.barcode.trim().toUpperCase();
+      const existingBarcode = await Product.findOne({ barcode: payload.barcode });
       if (existingBarcode) {
-        throw AppError.conflict(`Product barcode '${data.barcode}' already exists`);
+        throw AppError.conflict(`Product barcode '${payload.barcode}' already exists`);
       }
     }
 
-    const product = await Product.create({
-      ...data,
-      isDeleted: false,
-    });
+    if (!payload.modelNumber || (typeof payload.modelNumber === 'string' && payload.modelNumber.trim() === '')) {
+      delete payload.modelNumber;
+    }
+    if (!payload.description || (typeof payload.description === 'string' && payload.description.trim() === '')) {
+      delete payload.description;
+    }
+
+    const product = await Product.create(payload);
 
     await AuditService.log({
       action: 'MASTER_DATA_CREATED',
@@ -125,13 +137,22 @@ export class MasterDataService {
       }
     }
 
-    if (data.barcode && data.barcode !== product.barcode) {
-      const existingBarcode = await Product.findOne({
-        barcode: data.barcode,
-        _id: { $ne: product._id },
-      });
-      if (existingBarcode) {
-        throw AppError.conflict(`Product barcode '${data.barcode}' is already in use`);
+    if (data.barcode !== undefined) {
+      if (data.barcode && typeof data.barcode === 'string' && data.barcode.trim() !== '') {
+        const cleanBarcode = data.barcode.trim().toUpperCase();
+        if (cleanBarcode !== product.barcode) {
+          const existingBarcode = await Product.findOne({
+            barcode: cleanBarcode,
+            _id: { $ne: product._id },
+          });
+          if (existingBarcode) {
+            throw AppError.conflict(`Product barcode '${cleanBarcode}' is already in use`);
+          }
+        }
+        product.barcode = cleanBarcode;
+      } else {
+        // If empty or null is passed, unset the barcode
+        product.set('barcode', undefined);
       }
     }
 
@@ -145,7 +166,9 @@ export class MasterDataService {
       isActive: product.isActive,
     };
 
-    Object.assign(product, data);
+    const updatePayload = { ...data };
+    delete updatePayload.barcode; // Barcode already managed above
+    Object.assign(product, updatePayload);
     await product.save();
 
     await AuditService.log({
@@ -259,17 +282,25 @@ export class MasterDataService {
       throw AppError.conflict(`Component code '${data.componentCode}' already exists`);
     }
 
-    if (data.barcode) {
-      const existingBarcode = await Component.findOne({ barcode: data.barcode });
+    const payload: any = { ...data, isDeleted: false };
+
+    // Industrial Safety Rule:
+    // Strip empty/whitespace barcode so MongoDB sparse index doesn't collide on { barcode: "" }
+    if (!payload.barcode || typeof payload.barcode !== 'string' || payload.barcode.trim() === '') {
+      delete payload.barcode;
+    } else {
+      payload.barcode = payload.barcode.trim().toUpperCase();
+      const existingBarcode = await Component.findOne({ barcode: payload.barcode });
       if (existingBarcode) {
-        throw AppError.conflict(`Component barcode '${data.barcode}' already exists`);
+        throw AppError.conflict(`Component barcode '${payload.barcode}' already exists`);
       }
     }
 
-    const component = await Component.create({
-      ...data,
-      isDeleted: false,
-    });
+    if (!payload.specifications || (typeof payload.specifications === 'string' && payload.specifications.trim() === '')) {
+      delete payload.specifications;
+    }
+
+    const component = await Component.create(payload);
 
     await AuditService.log({
       action: 'MASTER_DATA_CREATED',
@@ -303,13 +334,21 @@ export class MasterDataService {
       }
     }
 
-    if (data.barcode && data.barcode !== component.barcode) {
-      const existingBarcode = await Component.findOne({
-        barcode: data.barcode,
-        _id: { $ne: component._id },
-      });
-      if (existingBarcode) {
-        throw AppError.conflict(`Component barcode '${data.barcode}' is already in use`);
+    if (data.barcode !== undefined) {
+      if (data.barcode && typeof data.barcode === 'string' && data.barcode.trim() !== '') {
+        const cleanBarcode = data.barcode.trim().toUpperCase();
+        if (cleanBarcode !== component.barcode) {
+          const existingBarcode = await Component.findOne({
+            barcode: cleanBarcode,
+            _id: { $ne: component._id },
+          });
+          if (existingBarcode) {
+            throw AppError.conflict(`Component barcode '${cleanBarcode}' is already in use`);
+          }
+        }
+        component.barcode = cleanBarcode;
+      } else {
+        component.set('barcode', undefined);
       }
     }
 
@@ -322,7 +361,9 @@ export class MasterDataService {
       isActive: component.isActive,
     };
 
-    Object.assign(component, data);
+    const updatePayload = { ...data };
+    delete updatePayload.barcode;
+    Object.assign(component, updatePayload);
     await component.save();
 
     await AuditService.log({

@@ -268,23 +268,49 @@ export default function MasterDataPage() {
     setActionLoading(true);
     try {
       if (activeTab === 'products') {
-        const res = await api.post<ApiResponse<IProductItem>>('/master/products', productForm);
+        // Sanitize product payload: empty strings for optional fields converted to undefined
+        const payload = {
+          productCode: productForm.productCode.trim(),
+          barcode: productForm.barcode.trim() || undefined,
+          name: productForm.name.trim(),
+          modelNumber: productForm.modelNumber.trim() || undefined,
+          category: productForm.category.trim() || 'Appliances',
+          description: productForm.description.trim() || undefined,
+          isActive: productForm.isActive,
+        };
+        const res = await api.post<ApiResponse<IProductItem>>('/master/products', payload);
         if (res.success) {
           setToast({ type: 'success', text: 'Product created successfully.' });
           setIsCreateModalOpen(false);
           fetchData(1, true);
         }
       } else if (activeTab === 'components') {
-        const res = await api.post<ApiResponse<IComponentItem>>('/master/components', componentForm);
+        // Sanitize component payload
+        const payload = {
+          componentCode: componentForm.componentCode.trim(),
+          barcode: componentForm.barcode.trim() || undefined,
+          name: componentForm.name.trim(),
+          category: componentForm.category.trim() || 'Mechanical',
+          specifications: componentForm.specifications.trim() || undefined,
+          isActive: componentForm.isActive,
+        };
+        const res = await api.post<ApiResponse<IComponentItem>>('/master/components', payload);
         if (res.success) {
           setToast({ type: 'success', text: 'Component created successfully.' });
           setIsCreateModalOpen(false);
           fetchData(1, true);
         }
       } else {
+        // Sanitize point payload
+        const payload = {
+          pointCode: pointForm.pointCode.trim(),
+          name: pointForm.name.trim(),
+          location: pointForm.location.trim() || undefined,
+          isActive: pointForm.isActive,
+        };
         const res = await api.post<ApiResponse<IReceivePointItem | IDeliveryPointItem>>(
           `/master/${activeTab}`,
-          pointForm
+          payload
         );
         if (res.success) {
           setToast({ type: 'success', text: 'Location point created successfully.' });
@@ -293,7 +319,12 @@ export default function MasterDataPage() {
         }
       }
     } catch (err: unknown) {
-      const msg = err instanceof ApiClientError ? err.message : 'Failed to create record';
+      const msg =
+        err instanceof ApiClientError
+          ? Array.isArray(err.details)
+            ? err.details.map((d: { message?: string }) => d.message || String(d)).join(', ')
+            : err.message
+          : 'Failed to create record';
       setToast({ type: 'error', text: msg });
     } finally {
       setActionLoading(false);
@@ -344,9 +375,18 @@ export default function MasterDataPage() {
     setActionLoading(true);
     try {
       if (activeTab === 'products' && selectedProductId) {
+        const payload = {
+          productCode: productForm.productCode.trim(),
+          barcode: productForm.barcode.trim() || undefined,
+          name: productForm.name.trim(),
+          modelNumber: productForm.modelNumber.trim() || undefined,
+          category: productForm.category.trim() || 'Appliances',
+          description: productForm.description.trim() || undefined,
+          isActive: productForm.isActive,
+        };
         const res = await api.put<ApiResponse<IProductItem>>(
           `/master/products/${selectedProductId}`,
-          productForm
+          payload
         );
         if (res.success) {
           setToast({ type: 'success', text: 'Product updated successfully.' });
@@ -354,9 +394,17 @@ export default function MasterDataPage() {
           fetchData(pagination.page, false);
         }
       } else if (activeTab === 'components' && selectedComponentId) {
+        const payload = {
+          componentCode: componentForm.componentCode.trim(),
+          barcode: componentForm.barcode.trim() || undefined,
+          name: componentForm.name.trim(),
+          category: componentForm.category.trim() || 'Mechanical',
+          specifications: componentForm.specifications.trim() || undefined,
+          isActive: componentForm.isActive,
+        };
         const res = await api.put<ApiResponse<IComponentItem>>(
           `/master/components/${selectedComponentId}`,
-          componentForm
+          payload
         );
         if (res.success) {
           setToast({ type: 'success', text: 'Component updated successfully.' });
@@ -364,9 +412,15 @@ export default function MasterDataPage() {
           fetchData(pagination.page, false);
         }
       } else if (selectedPointId) {
+        const payload = {
+          pointCode: pointForm.pointCode.trim(),
+          name: pointForm.name.trim(),
+          location: pointForm.location.trim() || undefined,
+          isActive: pointForm.isActive,
+        };
         const res = await api.put<ApiResponse<IReceivePointItem | IDeliveryPointItem>>(
           `/master/${activeTab}/${selectedPointId}`,
-          pointForm
+          payload
         );
         if (res.success) {
           setToast({ type: 'success', text: 'Location point updated successfully.' });
@@ -375,7 +429,12 @@ export default function MasterDataPage() {
         }
       }
     } catch (err: unknown) {
-      const msg = err instanceof ApiClientError ? err.message : 'Failed to update record';
+      const msg =
+        err instanceof ApiClientError
+          ? Array.isArray(err.details)
+            ? err.details.map((d: { message?: string }) => d.message || String(d)).join(', ')
+            : err.message
+          : 'Failed to update record';
       setToast({ type: 'error', text: msg });
     } finally {
       setActionLoading(false);
