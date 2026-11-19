@@ -1,6 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import {
+  Truck,
+  Camera,
+  RotateCcw,
+  MapPin,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  Check,
+  Zap,
+  ArrowRight,
+  Search,
+} from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
 import { CameraBarcodeScannerModal, playAudioBeep } from '@/src/components/scanner/CameraBarcodeScannerModal';
 import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
@@ -18,26 +31,13 @@ interface AttachedComponentItem {
 }
 
 interface CurrentReceivePointInfo {
-  pointId?: string;
+  pointId: string;
+  pointCode: string;
   pointName: string;
-  pointCode?: string;
   location?: string;
   receivedAt: string;
   receivedBy: string;
   userCode: string;
-  transactionId?: string;
-}
-
-interface LastDeliveryInfo {
-  pointId?: string;
-  pointName: string;
-  pointCode?: string;
-  location?: string;
-  deliveredAt: string;
-  deliveredBy: string;
-  userCode: string;
-  originalReceivePointName?: string;
-  transactionId?: string;
 }
 
 interface ProductScanResult {
@@ -51,7 +51,6 @@ interface ProductScanResult {
   isCurrentlyReceived: boolean;
   isCurrentlyDelivered: boolean;
   currentReceivePoint?: CurrentReceivePointInfo;
-  lastDelivery?: LastDeliveryInfo;
   attachedComponents: AttachedComponentItem[];
   historyCount: number;
 }
@@ -61,20 +60,17 @@ interface DeliveryResult {
   status: string;
   productBarcode: string;
   productModel: string;
-  deliveryPoint: {
+  originalReceivePoint: {
     id: string;
     pointCode: string;
     name: string;
     location?: string;
   };
-  originalReceivePoint: {
-    id?: string;
+  deliveryPoint: {
+    id: string;
+    pointCode: string;
     name: string;
-    code?: string;
     location?: string;
-    receivedAt?: string;
-    receivedBy?: string;
-    userCode?: string;
   };
   transaction: {
     _id: string;
@@ -83,10 +79,8 @@ interface DeliveryResult {
     userCode: string;
     userName: string;
     createdAt: string;
-    metadata?: Record<string, unknown>;
   };
   attachedComponentsCount: number;
-  attachedComponents: AttachedComponentItem[];
 }
 
 export default function ProductDeliveryPage() {
@@ -126,18 +120,18 @@ export default function ProductDeliveryPage() {
           const fallbackPoints: IDeliveryPointItem[] = [
             {
               _id: 'DP_FALLBACK_1',
-              pointCode: 'DP-REF-01',
-              name: 'Refrigerator Delivery Point 1',
-              location: 'Outbound Bay 1 - North Logistics Gate',
+              pointCode: 'DP-NORTH-01',
+              name: 'Outbound Delivery Dock 1 - North Gate',
+              location: 'Logistics Bay North - Fleet Loading Area',
               isActive: true,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             },
             {
               _id: 'DP_FALLBACK_2',
-              pointCode: 'DP-REF-02',
-              name: 'Refrigerator Delivery Point 2',
-              location: 'Outbound Bay 2 - South Distribution Dock',
+              pointCode: 'DP-SOUTH-02',
+              name: 'Outbound Delivery Dock 2 - South Gate',
+              location: 'Logistics Bay South - Domestic Distribution',
               isActive: true,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -155,13 +149,13 @@ export default function ProductDeliveryPage() {
     };
   }, []);
 
-  // 1. Verify / Scan Product Chassis Barcode
+  // 1. Submit Product Barcode Scan & Validate Stock Availability
   const handleProductScanSubmit = async (e?: React.FormEvent, barcodeOverride?: string) => {
     if (e) e.preventDefault();
-    const barcodeToScan = (barcodeOverride || productBarcode).trim().toUpperCase();
+    const barcodeToVerify = (barcodeOverride || productBarcode).trim().toUpperCase();
 
-    if (!barcodeToScan) {
-      setToast({ type: 'error', text: 'Please enter or scan a product chassis barcode' });
+    if (!barcodeToVerify) {
+      setToast({ type: 'error', text: 'Please enter or scan a product barcode' });
       return;
     }
 
@@ -171,39 +165,41 @@ export default function ProductDeliveryPage() {
 
     try {
       const res = await api.get<ApiResponse<ProductScanResult>>(
-        `/inventory/product-scan/${barcodeToScan}`
+        `/inventory/product-scan/${barcodeToVerify}`
       );
 
       if (res.success && res.data) {
-        setProductData(res.data);
-        setProductBarcode(barcodeToScan);
+        const data = res.data;
+        setProductData(data);
+        setProductBarcode(barcodeToVerify);
 
-        if (!res.data.hasActiveComponents || res.data.status === 'NEW_UNTRACKED') {
+        // Evaluate Delivery Business Rules
+        if (data.status === 'NEW_UNTRACKED') {
+          playAudioBeep(330, 300);
           setWarningAlert(
-            '⚠️ Product Unavailable: Chassis has not undergone component tracking and was never admitted into warehouse stock.'
+            'Product Unavailable: Chassis has not undergone component tracking and was never admitted into warehouse stock.'
           );
-          playAudioBeep(330, 250); // Warning buzzer
-        } else if (res.data.status === 'TRACKED' && !res.data.isCurrentlyReceived) {
+        } else if (data.status === 'TRACKED') {
+          playAudioBeep(330, 300);
           setWarningAlert(
-            '⚠️ Product Unavailable: Unit has completed component tracking but was never received into warehouse inventory. Intake must precede delivery.'
+            'Product Unavailable: Unit has completed component tracking but was never received into warehouse inventory. Intake must precede delivery.'
           );
-          playAudioBeep(330, 250);
-        } else if (res.data.status === 'DELIVERED' || res.data.isCurrentlyDelivered) {
+        } else if (data.status === 'DELIVERED' || data.isCurrentlyDelivered) {
+          playAudioBeep(330, 300);
           setWarningAlert(
-            '⚠️ Duplicate Delivery Blocked: Product has already been dispatched/delivered from warehouse stock. Duplicate delivery is strictly prohibited.'
+            'Duplicate Delivery Blocked: Product has already been dispatched/delivered from warehouse stock. Duplicate delivery is strictly prohibited.'
           );
-          playAudioBeep(330, 250);
-        } else if (res.data.status === 'IN_STOCK' && res.data.isCurrentlyReceived) {
-          playAudioBeep(880, 150); // Success chime
+        } else if (data.status === 'IN_STOCK' && data.isCurrentlyReceived) {
+          playAudioBeep(880, 150);
           setToast({
             type: 'success',
-            text: `Chassis verified: Available in stock at '${res.data.currentReceivePoint?.pointName || 'Warehouse'}'. Ready for dispatch.`,
+            text: `Chassis verified: Currently IN STOCK at ${data.currentReceivePoint?.pointName || 'Warehouse'}. Eligible for delivery.`,
           });
         }
       }
     } catch (err: unknown) {
-      playAudioBeep(220, 300);
-      const msg = err instanceof ApiClientError ? err.message : 'Product chassis verification failed';
+      playAudioBeep(220, 350);
+      const msg = err instanceof ApiClientError ? err.message : 'Product verification failed';
       setToast({ type: 'error', text: msg });
       setProductData(null);
     } finally {
@@ -211,92 +207,80 @@ export default function ProductDeliveryPage() {
     }
   };
 
-  // 2. Open Confirmation Dialog
+  // 2. Open Delivery Confirmation Modal
   const handleOpenConfirmation = () => {
     if (!productData) {
-      setToast({ type: 'error', text: 'Please scan and verify a product chassis barcode first' });
+      setToast({ type: 'error', text: 'Please scan and verify a product barcode first' });
       return;
     }
-    if (productData.isCurrentlyDelivered) {
-      setToast({
-        type: 'error',
-        text: 'Cannot deliver product: Unit has already been delivered.',
-      });
-      return;
-    }
+
     if (productData.status !== 'IN_STOCK' || !productData.isCurrentlyReceived) {
-      setToast({
-        type: 'error',
-        text: 'Cannot deliver product: Unit is not currently available in warehouse stock.',
-      });
+      setWarningAlert(
+        'Delivery Prohibited: Product must currently be IN_STOCK in warehouse inventory.'
+      );
       return;
     }
+
+    if (productData.isCurrentlyDelivered) {
+      setWarningAlert('Product is already delivered.');
+      return;
+    }
+
     if (!selectedPointId) {
-      setToast({ type: 'error', text: 'Please select an active destination delivery point' });
+      setToast({ type: 'error', text: 'Please select a valid outbound delivery point' });
       return;
     }
 
     setIsConfirmDialogOpen(true);
   };
 
-  // 3. Confirm & Execute Delivery
+  // 3. Confirm and Execute Atomic Delivery Transaction
   const handleConfirmDelivery = async () => {
     if (!productData || !selectedPointId) return;
 
     setDeliveryLoading(true);
     try {
-      const selectedPoint = deliveryPoints.find((p) => p._id === selectedPointId);
-      const res = await api.post<ApiResponse<DeliveryResult>>('/inventory/deliver', {
+      const res = await api.post<ApiResponse<DeliveryResult>>('/inventory/deliver-product', {
         productBarcode: productData.productBarcode,
         deliveryPointId: selectedPointId,
-        deliveryPointCode: selectedPoint?.pointCode,
-        stationNotes: stationNotes.trim() || undefined,
+        notes: stationNotes.trim() || undefined,
       });
 
       if (res.success && res.data) {
-        const deliveryData = res.data;
-        playAudioBeep(880, 250); // Double success chime
-        setTimeout(() => playAudioBeep(1174, 200), 120);
-
-        setDeliverySuccessReceipt(deliveryData);
+        playAudioBeep(987, 250);
+        setDeliverySuccessReceipt(res.data);
         setIsConfirmDialogOpen(false);
-        setWarningAlert(null);
+        setToast({
+          type: 'success',
+          text: `Product ${res.data.productBarcode} dispatched out of stock via ${res.data.deliveryPoint.name}!`,
+        });
 
-        // Update product data to reflect DELIVERED
+        // Update active scan state
         setProductData((prev) =>
           prev
             ? {
                 ...prev,
                 status: 'DELIVERED',
+                isCurrentlyReceived: false,
                 isCurrentlyDelivered: true,
-                canAttachComponents: false,
-                lastDelivery: {
-                  pointName: deliveryData.deliveryPoint.name,
-                  pointCode: deliveryData.deliveryPoint.pointCode,
-                  deliveredAt: new Date().toISOString(),
-                  deliveredBy: user?.name || 'Operator',
-                  userCode: user?.userCode || '',
-                  originalReceivePointName: deliveryData.originalReceivePoint.name,
-                },
+                historyCount: prev.historyCount + 1,
               }
             : null
         );
-
-        setToast({
-          type: 'success',
-          text: `Delivery Complete: Product '${res.data.productBarcode}' issued from '${res.data.originalReceivePoint.name}' via '${res.data.deliveryPoint.name}'.`,
-        });
+        setStationNotes('');
       }
     } catch (err: unknown) {
-      playAudioBeep(220, 350);
-      const msg = err instanceof ApiClientError ? err.message : 'Product delivery failed';
+      playAudioBeep(220, 400);
+      const msg = err instanceof ApiClientError ? err.message : 'Delivery transaction failed';
       setToast({ type: 'error', text: msg });
+      if (msg.toLowerCase().includes('already delivered') || msg.toLowerCase().includes('duplicate')) {
+        setWarningAlert(`CONCURRENCY RESTRICTION: ${msg}`);
+      }
     } finally {
       setDeliveryLoading(false);
     }
   };
 
-  // 4. Reset Station
   const handleResetStation = () => {
     setProductBarcode('');
     setProductData(null);
@@ -330,8 +314,8 @@ export default function ProductDeliveryPage() {
   return (
     <ProtectedRoute allowedRoles={['ADMIN', 'DELIVERY_USER']}>
       <div className="space-y-6">
-        {/* Workstation Header Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Workstation Header */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -339,14 +323,14 @@ export default function ProductDeliveryPage() {
               </span>
               <span className="text-slate-300">•</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                Day 7 of 10
+                Product Delivery
               </span>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              Product Delivery Dock (Outbound Dispatch)
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Product Delivery Dock
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Verify real-time stock availability, inspect origin intake bay history, and dispatch finished refrigerator units through authorized delivery points.
+              Verify real-time stock availability, inspect origin intake bay history, and dispatch finished units through authorized delivery points.
             </p>
           </div>
 
@@ -359,9 +343,10 @@ export default function ProductDeliveryPage() {
             </div>
             <button
               onClick={handleResetStation}
-              className="px-3.5 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer"
+              className="px-3.5 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
             >
-              🔄 Clear Station
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Clear Station</span>
             </button>
           </div>
         </div>
@@ -370,36 +355,38 @@ export default function ProductDeliveryPage() {
         <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
         {warningAlert && (
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs shadow-xs space-y-1 animate-in fade-in">
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs shadow-xs space-y-1">
             <div className="flex items-center space-x-2 font-bold">
-              <span>⚠️ Delivery Invariant Constraint Alert</span>
+              <AlertTriangle className="w-4 h-4 text-amber-700" />
+              <span>Delivery Invariant Constraint Alert</span>
             </div>
-            <p className="leading-relaxed">{warningAlert}</p>
+            <p className="leading-relaxed pl-6">{warningAlert}</p>
           </div>
         )}
 
-        {/* Success Receipt Banner (When Unit Delivered) */}
+        {/* Success Receipt Banner */}
         {deliverySuccessReceipt && (
-          <div className="p-6 rounded-2xl bg-purple-50 border border-purple-300 text-purple-950 shadow-sm animate-in fade-in space-y-4">
+          <div className="p-6 rounded-2xl bg-purple-50 border border-purple-300 text-purple-950 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-purple-200 pb-3">
               <div className="flex items-center space-x-3">
-                <span className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center text-xl font-bold">
-                  🚚
+                <span className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center">
+                  <Truck className="w-5 h-5" />
                 </span>
                 <div>
                   <h3 className="text-base font-black text-purple-900">
                     Product Successfully Dispatched from Warehouse
                   </h3>
                   <p className="text-xs text-purple-700">
-                    Immutable ledger transaction #{deliverySuccessReceipt.transaction._id} recorded
+                    Ledger transaction #{deliverySuccessReceipt.transaction._id} recorded
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleResetStation}
-                className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                Scan Next Unit ➔
+                <span>Scan Next Unit</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -437,7 +424,7 @@ export default function ProductDeliveryPage() {
           {/* Left Column: Barcode Scanning & Delivery Point Selection (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             {/* Step 1: SCAN PRODUCT CHASSIS */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center space-x-2">
                   <span className="w-6 h-6 rounded-lg bg-purple-600 text-white text-xs font-bold flex items-center justify-center">
@@ -454,9 +441,10 @@ export default function ProductDeliveryPage() {
                     setProductBarcode(testBarcode);
                     handleProductScanSubmit(undefined, testBarcode);
                   }}
-                  className="text-[11px] font-semibold text-purple-600 hover:text-purple-800 cursor-pointer"
+                  className="text-[11px] font-semibold text-purple-600 hover:text-purple-800 cursor-pointer flex items-center gap-1"
                 >
-                  ⚡ Sample Walton Chassis (2440701AK2057)
+                  <Zap className="w-3 h-3" />
+                  <span>Sample Chassis (2440701AK2057)</span>
                 </button>
               </div>
 
@@ -476,16 +464,18 @@ export default function ProductDeliveryPage() {
                     <button
                       type="button"
                       onClick={() => setIsScannerOpen(true)}
-                      className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1 cursor-pointer shrink-0"
+                      className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 cursor-pointer shrink-0"
                     >
-                      <span>📷 Camera</span>
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Camera</span>
                     </button>
                     <button
                       type="submit"
                       disabled={loading || !productBarcode.trim()}
-                      className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 shadow-xs"
+                      className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 shadow-xs flex items-center gap-1"
                     >
-                      {loading ? 'Checking Stock...' : 'Check Stock ➔'}
+                      <span>{loading ? 'Checking Stock...' : 'Check Stock'}</span>
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
@@ -501,7 +491,7 @@ export default function ProductDeliveryPage() {
                 <div className="flex items-center justify-between border-b border-emerald-200/70 pb-2.5">
                   <div className="flex items-center space-x-2">
                     <span className="w-5 h-5 rounded-md bg-emerald-600 text-white text-[11px] font-bold flex items-center justify-center">
-                      📍
+                      <MapPin className="w-3 h-3" />
                     </span>
                     <h4 className="text-xs font-bold text-emerald-950 uppercase tracking-wide">
                       Origin Stock Location (Current Bay)
@@ -533,7 +523,7 @@ export default function ProductDeliveryPage() {
                     </div>
                   )}
                   <div>
-                    <span className="text-[11px] text-emerald-700 font-medium block">Intake Date & Time:</span>
+                    <span className="text-[11px] text-emerald-700 font-medium block">Intake Date &amp; Time:</span>
                     <span className="text-emerald-900 font-mono">
                       {new Date(productData.currentReceivePoint.receivedAt).toLocaleString()}
                     </span>
@@ -549,7 +539,7 @@ export default function ProductDeliveryPage() {
             )}
 
             {/* Step 2: DESTINATION DELIVERY POINT SELECTOR */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
               <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
                 <span className="w-6 h-6 rounded-lg bg-purple-600 text-white text-xs font-bold flex items-center justify-center">
                   2
@@ -587,14 +577,15 @@ export default function ProductDeliveryPage() {
                       </span>
                     </div>
                     {selectedPoint.location && (
-                      <p className="text-slate-500 text-[11px]">
-                        📍 Location: {selectedPoint.location}
+                      <p className="text-slate-500 text-[11px] flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-slate-400" />
+                        <span>Location: {selectedPoint.location}</span>
                       </p>
                     )}
                   </div>
                 )}
 
-                {/* Station Shift / Invoice / Logistics Notes */}
+                {/* Station Shift / Logistics Notes */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Dispatch / Invoice Notes (Optional)
@@ -612,11 +603,11 @@ export default function ProductDeliveryPage() {
             </div>
 
             {/* Step 3: DISPATCH ACTION BUTTON */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-xs text-slate-500">
                 {canDeliver ? (
                   <span className="text-purple-700 font-bold flex items-center space-x-1.5">
-                    <span>✓</span>
+                    <CheckCircle2 className="w-4 h-4 text-purple-600" />
                     <span>Stock verified. Ready to dispatch unit from warehouse.</span>
                   </span>
                 ) : (
@@ -630,19 +621,21 @@ export default function ProductDeliveryPage() {
                 type="button"
                 onClick={handleOpenConfirmation}
                 disabled={!canDeliver || deliveryLoading}
-                className="w-full sm:w-auto px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer shrink-0"
+                className="w-full sm:w-auto px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer shrink-0 flex items-center justify-center gap-2"
               >
-                {deliveryLoading ? 'Dispatching...' : '🚚 Dispatch Product Out of Stock ➔'}
+                <Truck className="w-4 h-4" />
+                <span>{deliveryLoading ? 'Dispatching...' : 'Dispatch Product Out of Stock'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {/* Right Column: Live Product Validation & Bill of Materials (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-bold text-slate-900">
-                  Product Status & Stock Details
+                  Product Status &amp; Stock Details
                 </h3>
                 {productData && (
                   <span
@@ -690,12 +683,23 @@ export default function ProductDeliveryPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold">
-                        {productData.status === 'IN_STOCK'
-                          ? '✓ Available in Stock'
-                          : productData.status === 'DELIVERED'
-                          ? '✕ Already Delivered / Dispatched'
-                          : '✕ Not Available in Stock'}
+                      <span className="font-bold flex items-center gap-1.5">
+                        {productData.status === 'IN_STOCK' ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span>Available in Stock</span>
+                          </>
+                        ) : productData.status === 'DELIVERED' ? (
+                          <>
+                            <AlertCircle className="w-4 h-4 text-purple-600" />
+                            <span>Already Delivered / Dispatched</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-4 h-4 text-rose-600" />
+                            <span>Not Available in Stock</span>
+                          </>
+                        )}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -749,7 +753,7 @@ export default function ProductDeliveryPage() {
                 </div>
               ) : (
                 <div className="p-8 rounded-xl border border-dashed border-slate-200 text-center space-y-2">
-                  <span className="text-3xl block">🚚</span>
+                  <Search className="w-8 h-8 text-slate-300 mx-auto" />
                   <p className="text-xs font-bold text-slate-700">No Chassis Scanned</p>
                   <p className="text-[11px] text-slate-400">
                     Scan or enter a product chassis barcode in Step 1 to verify stock availability and view intake origin history.
@@ -762,11 +766,11 @@ export default function ProductDeliveryPage() {
 
         {/* Confirmation Modal Dialog */}
         {isConfirmDialogOpen && productData && selectedPoint && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-5 animate-in zoom-in-95">
+          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-5">
               <div className="flex items-center space-x-3 border-b border-slate-100 pb-3">
-                <span className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center text-lg font-bold">
-                  🚚
+                <span className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center">
+                  <Truck className="w-5 h-5 text-purple-700" />
                 </span>
                 <div>
                   <h3 className="text-base font-black text-slate-900">
@@ -822,9 +826,10 @@ export default function ProductDeliveryPage() {
                   type="button"
                   onClick={handleConfirmDelivery}
                   disabled={deliveryLoading}
-                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  {deliveryLoading ? 'Dispatching...' : '✓ Confirm & Dispatch Out of Stock'}
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{deliveryLoading ? 'Dispatching...' : 'Confirm & Dispatch Out of Stock'}</span>
                 </button>
               </div>
             </div>

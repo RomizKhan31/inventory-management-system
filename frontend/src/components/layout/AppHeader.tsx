@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/src/context/AuthContext';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
 import { getGroupedNavForRole, NavItem } from '@/src/config/navigation';
+import { ChevronDown, Key, LogOut, Menu, X, Activity } from 'lucide-react';
 
 export const AppHeader = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -91,14 +92,14 @@ export const AppHeader = () => {
                       <div key={cat} className="relative">
                         <button
                           onClick={() => setActiveDropdown(isOpen ? null : cat)}
-                          className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center space-x-1 transition-colors cursor-pointer ${
+                          className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer ${
                             isCurrentCategoryActive
                               ? 'bg-sky-50 text-sky-700 font-bold'
                               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                           }`}
                         >
                           <span>{cat}</span>
-                          <span className="text-[9px] text-slate-400">▼</span>
+                          <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isOpen && (
@@ -176,7 +177,7 @@ export const AppHeader = () => {
               rel="noreferrer"
               className="hidden md:flex px-2.5 py-1 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs transition-colors items-center space-x-1.5"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+              <Activity className="w-3.5 h-3.5 text-emerald-600" />
               <span>API Health</span>
             </a>
 
@@ -201,32 +202,27 @@ export const AppHeader = () => {
                 <button
                   onClick={() => setIsPasswordModalOpen(true)}
                   title="Change Password"
-                  className="px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer border border-slate-200"
+                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer border border-slate-200"
                 >
-                  🔑
+                  <Key className="w-3.5 h-3.5" />
                 </button>
 
                 {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="px-3 py-1.5 text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer flex items-center space-x-1"
                 >
-                  Sign Out
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
                 </button>
 
                 {/* Mobile Menu Toggle Button */}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="lg:hidden p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
+                  className="lg:hidden p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
                   aria-label="Toggle Navigation Menu"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {mobileMenuOpen ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    )}
-                  </svg>
+                  {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
                 </button>
               </div>
             ) : (

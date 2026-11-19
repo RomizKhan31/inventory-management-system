@@ -776,6 +776,26 @@ export class InventoryService {
   }
 
   /**
+   * Retrieve list of active products for component tracking workstation dropdown selector.
+   * Gated to OPERATION_COMPONENT_TRACK (COMPONENT_TRACKER & ADMIN).
+   */
+  static async getActiveProducts() {
+    return await Product.find({ isActive: true, isDeleted: false })
+      .sort({ name: 1, productCode: 1 })
+      .lean();
+  }
+
+  /**
+   * Retrieve list of active components for component tracking workstation dropdown selector.
+   * Gated to OPERATION_COMPONENT_TRACK (COMPONENT_TRACKER & ADMIN).
+   */
+  static async getActiveComponents() {
+    return await Component.find({ isActive: true, isDeleted: false })
+      .sort({ name: 1, componentCode: 1 })
+      .lean();
+  }
+
+  /**
    * Issue and deliver a product from available warehouse stock at an authorized delivery point.
    * Concurrency-safe, atomic, append-only ledger transaction.
    * Preserves the original receive point reference in the delivery transaction metadata.

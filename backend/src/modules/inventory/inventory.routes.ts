@@ -44,6 +44,18 @@ router.get(
  * Strictly gated to COMPONENT_TRACKER and ADMIN.
  * Other roles (Receive, Delivery, Report Viewer) MUST be rejected with 403.
  */
+router.get(
+  '/products',
+  requirePermission('OPERATION_COMPONENT_TRACK'),
+  InventoryController.listActiveProducts
+);
+
+router.get(
+  '/components',
+  requirePermission('OPERATION_COMPONENT_TRACK'),
+  InventoryController.listActiveComponents
+);
+
 router.post(
   '/track-components',
   requirePermission('OPERATION_COMPONENT_TRACK'),

@@ -1,6 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  TrendingUp,
+  Download,
+  ArrowDownToLine,
+  Truck,
+  RotateCcw,
+  FileText,
+  BarChart3,
+} from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
 import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
 import { api, ApiClientError, getToken } from '@/src/lib/api';
@@ -146,18 +155,18 @@ export default function SummaryTrendsPage() {
           <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center space-x-3">
-                <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-blue-100 text-blue-800 border border-blue-200">
-                  Day 9 of 10 • Executive Operational Analytics
+                <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-blue-50 text-blue-800 border border-blue-200">
+                  Analytics &amp; Trends
                 </span>
                 <span className="text-xs text-slate-500 font-mono">
-                  Date Window: {data?.dateRange.startDate} &rarr; {data?.dateRange.endDate}
+                  Window: {data?.dateRange.startDate} to {data?.dateRange.endDate}
                 </span>
               </div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <span>📈</span>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
                 <span>Date-Range Summary &amp; Operational Trends</span>
               </h1>
-              <p className="text-sm text-slate-600">
+              <p className="text-xs text-slate-600">
                 Aggregated volume throughput metrics, net inventory intake/dispatch rates, and daily trend visualizations.
               </p>
             </div>
@@ -167,8 +176,8 @@ export default function SummaryTrendsPage() {
                 onClick={handleExportCsv}
                 className="inline-flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
               >
-                <span>📥</span>
-                <span>Export Summary CSV</span>
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
               </button>
               <div className="text-right pl-3 border-l border-slate-200 hidden sm:block">
                 <p className="text-xs font-semibold text-slate-900">{user?.name}</p>
@@ -249,12 +258,14 @@ export default function SummaryTrendsPage() {
           {/* Executive KPI Cards */}
           {data && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase">Net Stock Receipts</span>
-                  <span className="text-lg">📥</span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                    <ArrowDownToLine className="w-4 h-4 text-emerald-600" />
+                  </div>
                 </div>
-                <p className="text-3xl font-black text-emerald-600">
+                <p className="text-2xl sm:text-3xl font-black text-emerald-600">
                   {data.metrics.netActiveReceived}
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -262,12 +273,14 @@ export default function SummaryTrendsPage() {
                 </p>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase">Net Dispatched</span>
-                  <span className="text-lg">🚚</span>
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+                    <Truck className="w-4 h-4 text-blue-600" />
+                  </div>
                 </div>
-                <p className="text-3xl font-black text-blue-600">
+                <p className="text-2xl sm:text-3xl font-black text-blue-600">
                   {data.metrics.netActiveDelivered}
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -275,12 +288,14 @@ export default function SummaryTrendsPage() {
                 </p>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase">Total Reversals</span>
-                  <span className="text-lg">↩️</span>
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+                    <RotateCcw className="w-4 h-4 text-amber-600" />
+                  </div>
                 </div>
-                <p className="text-3xl font-black text-amber-600">
+                <p className="text-2xl sm:text-3xl font-black text-amber-600">
                   {data.metrics.reversals.total}
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -288,12 +303,14 @@ export default function SummaryTrendsPage() {
                 </p>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase">Total Ledger Events</span>
-                  <span className="text-lg">📜</span>
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-slate-700" />
+                  </div>
                 </div>
-                <p className="text-3xl font-black text-slate-900">
+                <p className="text-2xl sm:text-3xl font-black text-slate-900">
                   {data.metrics.totalTransactions}
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -308,8 +325,8 @@ export default function SummaryTrendsPage() {
             <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <span>📊</span>
+                  <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-slate-700" />
                     <span>Daily Throughput Activity Trends</span>
                   </h2>
                   <p className="text-xs text-slate-500">

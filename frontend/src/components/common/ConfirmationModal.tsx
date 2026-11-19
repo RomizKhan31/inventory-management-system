@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { AlertTriangle, Info } from 'lucide-react';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -39,7 +40,11 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 isDestructive ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'
               }`}
             >
-              {isDestructive ? '⚠️' : 'ℹ️'}
+              {isDestructive ? (
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              ) : (
+                <Info className="w-5 h-5 text-sky-600" />
+              )}
             </div>
             <div className="space-y-1">
               <h3 className="text-base font-bold text-slate-900">{title}</h3>

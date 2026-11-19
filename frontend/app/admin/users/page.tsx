@@ -1,6 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Shield,
+  Plus,
+  Edit2,
+  X,
+} from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
 import { AdminSidebar } from '@/src/components/admin/AdminSidebar';
 import { AdminStatsCards } from '@/src/components/admin/AdminStatsCards';
@@ -293,11 +299,11 @@ export default function UserManagementPage() {
                   </span>
                   <span className="text-slate-300">•</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                    Day 4 of 10
+                    User Management
                   </span>
                 </div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-                  User Accounts & Single-Role Management
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+                  User Accounts &amp; Single-Role Management
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
                   Create manufacturing operator credentials, assign strictly one role, and soft-deactivate accounts.
@@ -308,7 +314,8 @@ export default function UserManagementPage() {
                 onClick={() => setIsCreateOpen(true)}
                 className="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer shrink-0"
               >
-                <span>➕ Add New User</span>
+                <Plus className="w-4 h-4" />
+                <span>Add New User</span>
               </button>
             </div>
 
@@ -431,17 +438,19 @@ export default function UserManagementPage() {
                               <button
                                 onClick={() => handleOpenEdit(u)}
                                 title="Edit Name & Email"
-                                className="px-2 py-1 text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg border border-slate-200 text-[11px] font-medium transition-colors cursor-pointer"
+                                className="px-2 py-1 text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg border border-slate-200 text-[11px] font-medium transition-colors cursor-pointer inline-flex items-center gap-1"
                               >
-                                ✏️ Edit
+                                <Edit2 className="w-3 h-3" />
+                                <span>Edit</span>
                               </button>
 
                               <button
                                 onClick={() => handleOpenRoleModal(u)}
                                 title="Change Assigned Role"
-                                className="px-2 py-1 text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg border border-slate-200 text-[11px] font-medium transition-colors cursor-pointer"
+                                className="px-2 py-1 text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg border border-slate-200 text-[11px] font-medium transition-colors cursor-pointer inline-flex items-center gap-1"
                               >
-                                🛡️ Role
+                                <Shield className="w-3 h-3" />
+                                <span>Role</span>
                               </button>
 
                               <button
@@ -511,9 +520,9 @@ export default function UserManagementPage() {
               </div>
               <button
                 onClick={() => setIsCreateOpen(false)}
-                className="text-slate-400 hover:text-slate-700 text-lg p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -619,9 +628,9 @@ export default function UserManagementPage() {
               </div>
               <button
                 onClick={() => setIsEditOpen(false)}
-                className="text-slate-400 hover:text-slate-700 text-lg p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -682,9 +691,9 @@ export default function UserManagementPage() {
               </div>
               <button
                 onClick={() => setIsRoleModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 text-lg p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

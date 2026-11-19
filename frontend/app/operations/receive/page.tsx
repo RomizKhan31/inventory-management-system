@@ -1,6 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import {
+  Package,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  Camera,
+  RotateCcw,
+  Zap,
+  Check,
+  Search,
+  MapPin,
+  ArrowRight,
+} from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
 import { CameraBarcodeScannerModal, playAudioBeep } from '@/src/components/scanner/CameraBarcodeScannerModal';
 import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
@@ -100,9 +113,9 @@ export default function ProductReceivingPage() {
             },
             {
               _id: 'RP_FALLBACK_2',
-              pointCode: 'RP-REF-02',
-              name: 'Refrigerator Receive Point 2',
-              location: 'Warehouse Bay 2 - Buffer Storage',
+              pointCode: 'RP-AC-02',
+              name: 'Air Conditioner Receive Point 2',
+              location: 'Warehouse Bay 2 - HVAC Staging',
               isActive: true,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -120,13 +133,13 @@ export default function ProductReceivingPage() {
     };
   }, []);
 
-  // 1. Verify / Scan Product Chassis Barcode
+  // 1. Submit Product Barcode Scan & Validate Prerequisites
   const handleProductScanSubmit = async (e?: React.FormEvent, barcodeOverride?: string) => {
     if (e) e.preventDefault();
-    const barcodeToScan = (barcodeOverride || productBarcode).trim().toUpperCase();
+    const barcodeToVerify = (barcodeOverride || productBarcode).trim().toUpperCase();
 
-    if (!barcodeToScan) {
-      setToast({ type: 'error', text: 'Please enter or scan a product chassis barcode' });
+    if (!barcodeToVerify) {
+      setToast({ type: 'error', text: 'Please enter or scan a product barcode' });
       return;
     }
 
@@ -136,39 +149,42 @@ export default function ProductReceivingPage() {
 
     try {
       const res = await api.get<ApiResponse<ProductScanResult>>(
-        `/inventory/product-scan/${barcodeToScan}`
+        `/inventory/product-scan/${barcodeToVerify}`
       );
 
       if (res.success && res.data) {
-        setProductData(res.data);
-        setProductBarcode(barcodeToScan);
+        const data = res.data;
+        setProductData(data);
+        setProductBarcode(barcodeToVerify);
 
-        if (!res.data.hasActiveComponents || res.data.status === 'NEW_UNTRACKED') {
+        // Evaluate Receiving Business Rules
+        if (!data.hasActiveComponents || data.attachedComponents.length === 0) {
+          playAudioBeep(330, 300);
           setWarningAlert(
-            '⚠️ Prerequisite Check Failed: Chassis has not completed Component Tracking. All modular components must be bound before warehouse stock admission.'
+            'Prerequisite Check Failed: Chassis has not completed Component Tracking. All modular components must be bound before warehouse stock admission.'
           );
-          playAudioBeep(330, 250); // Low frequency warning buzzer
-        } else if (res.data.isCurrentlyReceived || res.data.status === 'IN_STOCK') {
+        } else if (data.isCurrentlyReceived) {
+          playAudioBeep(330, 300);
           setWarningAlert(
-            '⚠️ Product is already in warehouse inventory stock! Duplicate receiving is strictly prohibited.'
+            'Product is already in warehouse inventory stock. Duplicate receiving is strictly prohibited.'
           );
-          playAudioBeep(330, 250);
-        } else if (res.data.isCurrentlyDelivered || res.data.status === 'DELIVERED') {
+        } else if (data.isCurrentlyDelivered) {
+          playAudioBeep(330, 300);
           setWarningAlert(
-            '⚠️ Product has already been dispatched/delivered from warehouse stock! Re-intake requires an administrative reversal workflow.'
+            'Product has already been dispatched/delivered from warehouse stock. Re-intake requires an administrative reversal workflow.'
           );
-          playAudioBeep(330, 250);
         } else {
-          playAudioBeep(880, 150); // High frequency success chime
+          // Success: Product is eligible for warehouse intake
+          playAudioBeep(880, 150);
           setToast({
             type: 'success',
-            text: `Chassis verified: Ready for intake with ${res.data.attachedComponents.length} bound components.`,
+            text: `Chassis verified: ${data.attachedComponents.length} components bound. Ready for receiving.`,
           });
         }
       }
     } catch (err: unknown) {
-      playAudioBeep(220, 300);
-      const msg = err instanceof ApiClientError ? err.message : 'Product chassis verification failed';
+      playAudioBeep(220, 350);
+      const msg = err instanceof ApiClientError ? err.message : 'Product verification failed';
       setToast({ type: 'error', text: msg });
       setProductData(null);
     } finally {
@@ -176,114 +192,112 @@ export default function ProductReceivingPage() {
     }
   };
 
-  // 2. Open Confirmation Dialog
+  // 2. Open Receive Confirmation Modal
   const handleOpenConfirmation = () => {
     if (!productData) {
-      setToast({ type: 'error', text: 'Please scan and verify a product chassis barcode first' });
+      setToast({ type: 'error', text: 'Please scan and verify a product barcode first' });
       return;
     }
-    if (!productData.hasActiveComponents || productData.status === 'NEW_UNTRACKED') {
-      setToast({
-        type: 'error',
-        text: 'Cannot receive untracked product: Component tracking is mandatory before intake.',
-      });
+
+    if (!productData.hasActiveComponents) {
+      setWarningAlert(
+        'Cannot receive product: Component tracking prerequisite not completed.'
+      );
       return;
     }
-    if (productData.isCurrentlyReceived || productData.status === 'IN_STOCK') {
-      setToast({
-        type: 'error',
-        text: 'Cannot receive product: Unit is already registered in warehouse stock.',
-      });
+
+    if (productData.isCurrentlyReceived) {
+      setWarningAlert('Product is already in stock.');
       return;
     }
-    if (productData.isCurrentlyDelivered || productData.status === 'DELIVERED') {
-      setToast({
-        type: 'error',
-        text: 'Cannot receive product: Unit has already been delivered.',
-      });
+
+    if (productData.isCurrentlyDelivered) {
+      setWarningAlert('Product is currently delivered. Re-receiving without reversal is prohibited.');
       return;
     }
+
     if (!selectedPointId) {
-      setToast({ type: 'error', text: 'Please select an active destination receive point' });
+      setToast({ type: 'error', text: 'Please select a valid warehouse receive point' });
       return;
     }
 
     setIsConfirmDialogOpen(true);
   };
 
-  // 3. Confirm & Execute Receiving
+  // 3. Confirm and Execute Atomic Receiving Transaction
   const handleConfirmReceive = async () => {
     if (!productData || !selectedPointId) return;
 
     setReceiveLoading(true);
     try {
-      const selectedPoint = receivePoints.find((p) => p._id === selectedPointId);
-      const res = await api.post<ApiResponse<ReceiveResult>>('/inventory/receive', {
+      const res = await api.post<ApiResponse<ReceiveResult>>('/inventory/receive-product', {
         productBarcode: productData.productBarcode,
         receivePointId: selectedPointId,
-        receivePointCode: selectedPoint?.pointCode,
-        stationNotes: stationNotes.trim() || undefined,
+        notes: stationNotes.trim() || undefined,
       });
 
       if (res.success && res.data) {
-        playAudioBeep(880, 250); // Double success chime
-        setTimeout(() => playAudioBeep(1174, 200), 120);
-
+        playAudioBeep(987, 250); // Pleasant high success chime
         setReceiveSuccessReceipt(res.data);
         setIsConfirmDialogOpen(false);
-        setWarningAlert(null);
+        setToast({
+          type: 'success',
+          text: `Product ${res.data.productBarcode} admitted into stock at ${res.data.receivePoint.name}!`,
+        });
 
-        // Update product data to reflect IN_STOCK
+        // Update active scan state
         setProductData((prev) =>
           prev
             ? {
                 ...prev,
                 status: 'IN_STOCK',
                 isCurrentlyReceived: true,
-                canAttachComponents: false,
+                historyCount: prev.historyCount + 1,
               }
             : null
         );
-
-        setToast({
-          type: 'success',
-          text: `Intake Complete: Product '${res.data.productBarcode}' admitted into stock at '${res.data.receivePoint.name}'.`,
-        });
+        setStationNotes('');
       }
     } catch (err: unknown) {
-      playAudioBeep(220, 350);
-      const msg = err instanceof ApiClientError ? err.message : 'Product receiving failed';
+      playAudioBeep(220, 400);
+      const msg = err instanceof ApiClientError ? err.message : 'Receiving transaction failed';
       setToast({ type: 'error', text: msg });
+      if (msg.toLowerCase().includes('already in stock') || msg.toLowerCase().includes('duplicate')) {
+        setWarningAlert(`CONCURRENCY RESTRICTION: ${msg}`);
+      }
     } finally {
       setReceiveLoading(false);
     }
   };
 
-  // 4. Reset Station
+  // Reset Station State
   const handleResetStation = () => {
     setProductBarcode('');
     setProductData(null);
     setWarningAlert(null);
-    setReceiveSuccessReceipt(null);
+    setToast(null);
     setStationNotes('');
+    setReceiveSuccessReceipt(null);
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'TRACKED':
-        return 'bg-emerald-50 text-emerald-800 border-emerald-300';
+        return 'bg-sky-50 text-sky-800 border-sky-200';
       case 'IN_STOCK':
-        return 'bg-amber-50 text-amber-800 border-amber-300';
+        return 'bg-amber-50 text-amber-800 border-amber-200';
       case 'DELIVERED':
-        return 'bg-purple-50 text-purple-800 border-purple-300';
+        return 'bg-purple-50 text-purple-800 border-purple-200';
       case 'NEW_UNTRACKED':
-        return 'bg-rose-50 text-rose-800 border-rose-300';
+        return 'bg-rose-50 text-rose-800 border-rose-200';
       default:
         return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
 
   const selectedPoint = receivePoints.find((p) => p._id === selectedPointId);
+
+  // Can execute receive if product is tracked and not currently in stock or delivered
   const canReceive =
     productData &&
     productData.hasActiveComponents &&
@@ -294,8 +308,8 @@ export default function ProductReceivingPage() {
   return (
     <ProtectedRoute allowedRoles={['ADMIN', 'RECEIVE_USER']}>
       <div className="space-y-6">
-        {/* Workstation Header Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Workstation Header */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -303,14 +317,14 @@ export default function ProductReceivingPage() {
               </span>
               <span className="text-slate-300">•</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Day 6 of 10
+                Product Receiving
               </span>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              Product Receiving Bay (Finished Goods Intake)
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Product Receiving Bay
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Verify serialized component tracking prerequisites and admit finished refrigerator units into warehouse stock at authorized receiving points.
+              Verify serialized component tracking prerequisites and admit finished units into warehouse stock at authorized receiving points.
             </p>
           </div>
 
@@ -323,9 +337,10 @@ export default function ProductReceivingPage() {
             </div>
             <button
               onClick={handleResetStation}
-              className="px-3.5 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer"
+              className="px-3.5 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
             >
-              🔄 Clear Station
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Clear Station</span>
             </button>
           </div>
         </div>
@@ -334,36 +349,38 @@ export default function ProductReceivingPage() {
         <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
         {warningAlert && (
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs shadow-xs space-y-1 animate-in fade-in">
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs shadow-xs space-y-1">
             <div className="flex items-center space-x-2 font-bold">
-              <span>⚠️ Operational Prerequisite Alert</span>
+              <AlertTriangle className="w-4 h-4 text-amber-700" />
+              <span>Operational Prerequisite Alert</span>
             </div>
-            <p className="leading-relaxed">{warningAlert}</p>
+            <p className="leading-relaxed pl-6">{warningAlert}</p>
           </div>
         )}
 
         {/* Success Receipt Banner (When Unit Received) */}
         {receiveSuccessReceipt && (
-          <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 shadow-sm animate-in fade-in space-y-4">
+          <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-950 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-emerald-200 pb-3">
               <div className="flex items-center space-x-3">
-                <span className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl font-bold">
-                  ✓
+                <span className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
+                  <Check className="w-5 h-5" />
                 </span>
                 <div>
                   <h3 className="text-base font-black text-emerald-900">
                     Product Successfully Admitted to Stock
                   </h3>
                   <p className="text-xs text-emerald-700">
-                    Immutable ledger transaction #{receiveSuccessReceipt.transaction._id} recorded
+                    Ledger transaction #{receiveSuccessReceipt.transaction._id} recorded
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleResetStation}
-                className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                Scan Next Unit ➔
+                <span>Scan Next Unit</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -401,7 +418,7 @@ export default function ProductReceivingPage() {
           {/* Left Column: Barcode Scanning & Receive Point Selection (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             {/* Step 1: SCAN PRODUCT CHASSIS */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center space-x-2">
                   <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
@@ -418,9 +435,10 @@ export default function ProductReceivingPage() {
                     setProductBarcode(testBarcode);
                     handleProductScanSubmit(undefined, testBarcode);
                   }}
-                  className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-800 cursor-pointer"
+                  className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-800 cursor-pointer flex items-center gap-1"
                 >
-                  ⚡ Sample Walton Chassis (2440701AK2057)
+                  <Zap className="w-3 h-3" />
+                  <span>Sample Chassis (2440701AK2057)</span>
                 </button>
               </div>
 
@@ -440,16 +458,18 @@ export default function ProductReceivingPage() {
                     <button
                       type="button"
                       onClick={() => setIsScannerOpen(true)}
-                      className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1 cursor-pointer shrink-0"
+                      className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 cursor-pointer shrink-0"
                     >
-                      <span>📷 Camera</span>
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Camera</span>
                     </button>
                     <button
                       type="submit"
                       disabled={loading || !productBarcode.trim()}
-                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 shadow-xs"
+                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 shadow-xs flex items-center gap-1"
                     >
-                      {loading ? 'Verifying...' : 'Verify Chassis ➔'}
+                      <span>{loading ? 'Verifying...' : 'Verify Chassis'}</span>
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
@@ -460,7 +480,7 @@ export default function ProductReceivingPage() {
             </div>
 
             {/* Step 2: DESTINATION RECEIVE POINT SELECTOR */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
               <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
                 <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
                   2
@@ -498,8 +518,9 @@ export default function ProductReceivingPage() {
                       </span>
                     </div>
                     {selectedPoint.location && (
-                      <p className="text-slate-500 text-[11px]">
-                        📍 Location: {selectedPoint.location}
+                      <p className="text-slate-500 text-[11px] flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-slate-400" />
+                        <span>Location: {selectedPoint.location}</span>
                       </p>
                     )}
                   </div>
@@ -523,11 +544,11 @@ export default function ProductReceivingPage() {
             </div>
 
             {/* Step 3: INTAKE ACTION BUTTON */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-xs text-slate-500">
                 {canReceive ? (
                   <span className="text-emerald-700 font-bold flex items-center space-x-1.5">
-                    <span>✓</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>All prerequisites satisfied. Ready to admit unit to stock.</span>
                   </span>
                 ) : (
@@ -541,19 +562,21 @@ export default function ProductReceivingPage() {
                 type="button"
                 onClick={handleOpenConfirmation}
                 disabled={!canReceive || receiveLoading}
-                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer shrink-0"
+                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer shrink-0 flex items-center justify-center gap-2"
               >
-                {receiveLoading ? 'Processing...' : '📦 Admit Unit Into Stock ➔'}
+                <Package className="w-4 h-4" />
+                <span>{receiveLoading ? 'Processing...' : 'Admit Unit Into Stock'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {/* Right Column: Live Product Validation & Bill of Materials (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-bold text-slate-900">
-                  Chassis Status & Components (BOM)
+                  Chassis Status &amp; Components (BOM)
                 </h3>
                 {productData && (
                   <span
@@ -599,10 +622,18 @@ export default function ProductReceivingPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold">
-                        {productData.hasActiveComponents
-                          ? '✓ Component Tracking Verified'
-                          : '✕ Component Tracking Missing'}
+                      <span className="font-bold flex items-center gap-1.5">
+                        {productData.hasActiveComponents ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span>Component Tracking Verified</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-4 h-4 text-rose-600" />
+                            <span>Component Tracking Missing</span>
+                          </>
+                        )}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -616,7 +647,7 @@ export default function ProductReceivingPage() {
                     </div>
                     <p className="text-[11px] text-slate-600 leading-relaxed">
                       {productData.hasActiveComponents
-                        ? 'Chassis has undergone serialized assembly tracking. Ready for warehouse inventory receipt.'
+                        ? 'Chassis has completed serialized assembly tracking. Ready for warehouse inventory receipt.'
                         : 'This chassis has zero attached sub-assemblies. Return to Assembly Line Component Tracking station.'}
                     </p>
                   </div>
@@ -654,7 +685,7 @@ export default function ProductReceivingPage() {
                 </div>
               ) : (
                 <div className="p-8 rounded-xl border border-dashed border-slate-200 text-center space-y-2">
-                  <span className="text-3xl block">🔍</span>
+                  <Search className="w-8 h-8 text-slate-300 mx-auto" />
                   <p className="text-xs font-bold text-slate-700">No Chassis Scanned</p>
                   <p className="text-[11px] text-slate-400">
                     Scan or enter a product chassis barcode in Step 1 to verify tracking status and view component specifications.
@@ -667,11 +698,11 @@ export default function ProductReceivingPage() {
 
         {/* Confirmation Modal Dialog */}
         {isConfirmDialogOpen && productData && selectedPoint && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-5 animate-in zoom-in-95">
+          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-5">
               <div className="flex items-center space-x-3 border-b border-slate-100 pb-3">
-                <span className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg font-bold">
-                  📦
+                <span className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                  <Package className="w-5 h-5 text-emerald-700" />
                 </span>
                 <div>
                   <h3 className="text-base font-black text-slate-900">
@@ -725,9 +756,10 @@ export default function ProductReceivingPage() {
                   type="button"
                   onClick={handleConfirmReceive}
                   disabled={receiveLoading}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  {receiveLoading ? 'Admitting...' : '✓ Confirm & Admit Into Stock'}
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{receiveLoading ? 'Admitting...' : 'Confirm & Admit Into Stock'}</span>
                 </button>
               </div>
             </div>

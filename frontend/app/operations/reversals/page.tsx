@@ -2,6 +2,21 @@
 
 import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
+import {
+  RotateCcw,
+  FileText,
+  Search,
+  Target,
+  Camera,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  X,
+  RefreshCw,
+  Undo2,
+  Check,
+} from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
 import { CameraBarcodeScannerModal, playAudioBeep } from '@/src/components/scanner/CameraBarcodeScannerModal';
 import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
@@ -318,18 +333,18 @@ export default function ReversalsPage() {
           <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center space-x-3">
-                <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-rose-100 text-rose-800 border border-rose-200">
-                  Day 8 of 10 • Admin Supervised
+                <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-rose-50 text-rose-800 border border-rose-200">
+                  Compensating Reversals
                 </span>
                 <span className="text-xs text-slate-500 font-mono">
-                  Ledger Version: Append-Only Immutable v2.4
+                  Append-Only Ledger
                 </span>
               </div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <span>🔄</span>
-                <span>Transaction Reversals & Corrections</span>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <RotateCcw className="w-5 h-5 text-rose-600" />
+                <span>Transaction Reversals &amp; Corrections</span>
               </h1>
-              <p className="text-sm text-slate-600">
+              <p className="text-xs text-slate-600">
                 Administrative terminal to safely compensate inventory transactions with mandatory audit reasons, preserving complete ledger lineage.
               </p>
             </div>
@@ -339,7 +354,7 @@ export default function ReversalsPage() {
                 href="/reports/audit-logs?action=TRANSACTION_REVERSED"
                 className="inline-flex items-center space-x-2 px-3.5 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition-colors"
               >
-                <span>📜</span>
+                <FileText className="w-3.5 h-3.5" />
                 <span>Audit Logs Trail</span>
               </Link>
               <div className="text-right pl-3 border-l border-slate-200 hidden sm:block">
@@ -354,11 +369,11 @@ export default function ReversalsPage() {
 
           {/* Success Reversal Voucher Receipt */}
           {reversalReceipt && (
-            <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-6 shadow-xs space-y-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl font-bold">
-                    ✓
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
+                    <Check className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-emerald-950">
@@ -371,9 +386,10 @@ export default function ReversalsPage() {
                 </div>
                 <button
                   onClick={() => setReversalReceipt(null)}
-                  className="text-xs text-emerald-700 hover:text-emerald-900 font-semibold p-1"
+                  className="text-xs text-emerald-700 hover:text-emerald-900 font-semibold p-1 flex items-center gap-1 cursor-pointer"
                 >
-                  ✕ Dismiss
+                  <X className="w-3.5 h-3.5" />
+                  <span>Dismiss</span>
                 </button>
               </div>
 
@@ -423,8 +439,8 @@ export default function ReversalsPage() {
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
-              <span>🔍</span>
-              <span>Chassis Lifecycle & Single-Unit Correction</span>
+              <Search className="w-3.5 h-3.5" />
+              <span>Chassis Lifecycle &amp; Single-Unit Correction</span>
             </button>
             <button
               onClick={() => {
@@ -437,8 +453,8 @@ export default function ReversalsPage() {
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
-              <span>📋</span>
-              <span>Global Immutable Transaction Ledger & Reversals</span>
+              <FileText className="w-3.5 h-3.5" />
+              <span>Global Immutable Transaction Ledger &amp; Reversals</span>
             </button>
           </div>
 
@@ -450,7 +466,7 @@ export default function ReversalsPage() {
               {/* Barcode Search Form */}
               <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6">
                 <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <span>🎯</span>
+                  <Target className="w-4 h-4 text-rose-600" />
                   <span>Inspect Product Chassis Lifecycle</span>
                 </h2>
 
@@ -467,9 +483,9 @@ export default function ReversalsPage() {
                       <button
                         type="button"
                         onClick={() => setSearchBarcode('')}
-                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 text-sm"
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5"
                       >
-                        ✕
+                        <X className="w-4 h-4" />
                       </button>
                     )}
                   </div>
@@ -479,7 +495,7 @@ export default function ReversalsPage() {
                     onClick={() => setIsScannerOpen(true)}
                     className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-xl border border-slate-300 transition-colors flex items-center justify-center space-x-2 cursor-pointer"
                   >
-                    <span>📷</span>
+                    <Camera className="w-3.5 h-3.5" />
                     <span>Scan Camera</span>
                   </button>
 
@@ -489,13 +505,13 @@ export default function ReversalsPage() {
                     className="px-6 py-3 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center space-x-2 cursor-pointer disabled:cursor-not-allowed"
                   >
                     {loadingChassis ? (
-                      <span className="flex items-center space-x-1">
-                        <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span className="flex items-center space-x-1.5">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                         <span>Querying...</span>
                       </span>
                     ) : (
                       <>
-                        <span>🔎</span>
+                        <Search className="w-3.5 h-3.5" />
                         <span>Inspect Chassis</span>
                       </>
                     )}
@@ -536,7 +552,7 @@ export default function ReversalsPage() {
                           }
                           className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-2 cursor-pointer"
                         >
-                          <span>↩️</span>
+                          <Undo2 className="w-3.5 h-3.5" />
                           <span>Reverse Delivery (Restore to Stock)</span>
                         </button>
                       )}
@@ -555,14 +571,15 @@ export default function ReversalsPage() {
                           }
                           className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-2 cursor-pointer"
                         >
-                          <span>↩️</span>
+                          <Undo2 className="w-3.5 h-3.5" />
                           <span>Reverse Receiving (Remove from Stock)</span>
                         </button>
                       )}
 
                       {chassisData.status === 'TRACKED' && (
-                        <span className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-semibold">
-                          ✓ Components Bound (Eligible for Individual Detachment)
+                        <span className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Components Bound (Eligible for Individual Detachment)</span>
                         </span>
                       )}
 
@@ -578,7 +595,7 @@ export default function ReversalsPage() {
                   {chassisData.status === 'DELIVERED' && (
                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-900 space-y-1">
                       <p className="font-bold flex items-center gap-1.5">
-                        <span>ℹ️</span>
+                        <Info className="w-4 h-4 text-blue-600" />
                         <span>Delivered Product Reversal Workflow:</span>
                       </p>
                       <p>
@@ -590,7 +607,7 @@ export default function ReversalsPage() {
                   {chassisData.status === 'IN_STOCK' && (
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-xs text-emerald-900 space-y-1">
                       <p className="font-bold flex items-center gap-1.5">
-                        <span>ℹ️</span>
+                        <Info className="w-4 h-4 text-emerald-600" />
                         <span>In-Stock Product Reversal Workflow:</span>
                       </p>
                       <p>
@@ -734,9 +751,9 @@ export default function ReversalsPage() {
                         setLedgerSearch('');
                         fetchLedger(1, '');
                       }}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
                     >
-                      ✕
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
@@ -761,10 +778,10 @@ export default function ReversalsPage() {
                   ))}
                   <button
                     onClick={() => fetchLedger(page)}
-                    className="p-1.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs"
+                    className="p-1.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs cursor-pointer"
                     title="Refresh Ledger"
                   >
-                    🔄
+                    <RefreshCw className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -944,16 +961,16 @@ export default function ReversalsPage() {
               <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-150">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-xl">⚠️</span>
+                    <AlertTriangle className="w-5 h-5 text-rose-600" />
                     <h3 className="text-base font-bold text-slate-900">
                       Confirm Compensating Reversal
                     </h3>
                   </div>
                   <button
                     onClick={() => setIsModalOpen(false)}
-                    className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm"
+                    className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
                   >
-                    ✕
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
@@ -991,8 +1008,8 @@ export default function ReversalsPage() {
 
                 {/* Downstream Impact Alert */}
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
-                  <p className="font-bold flex items-center gap-1">
-                    <span>🛑</span>
+                  <p className="font-bold flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-amber-700" />
                     <span>Downstream State Recalculation:</span>
                   </p>
                   <p>
@@ -1066,7 +1083,7 @@ export default function ReversalsPage() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                    className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1078,17 +1095,17 @@ export default function ReversalsPage() {
                       !confirmedDisclaimer
                     }
                     onClick={handleExecuteReversal}
-                    className="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 disabled:cursor-not-allowed rounded-xl shadow-xs transition-colors flex items-center space-x-2"
+                    className="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:bg-slate-300 disabled:cursor-not-allowed rounded-xl shadow-xs transition-colors flex items-center space-x-2 cursor-pointer"
                   >
                     {submittingReversal ? (
                       <span className="flex items-center space-x-1.5">
-                        <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                         <span>Executing Reversal...</span>
                       </span>
                     ) : (
                       <>
-                        <span>⚠️</span>
-                        <span>Confirm & Execute Reversal</span>
+                        <Undo2 className="w-3.5 h-3.5 mr-1" />
+                        <span>Confirm &amp; Execute Reversal</span>
                       </>
                     )}
                   </button>

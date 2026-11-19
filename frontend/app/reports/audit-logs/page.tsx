@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { X } from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
 import { AdminSidebar } from '@/src/components/admin/AdminSidebar';
 import { AdminStatsCards } from '@/src/components/admin/AdminStatsCards';
@@ -131,15 +132,15 @@ export default function AuditLogsPage() {
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center space-x-2">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Compliance & Traceability
+                  Compliance &amp; Traceability
                 </span>
                 <span className="text-slate-300">•</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                  Day 4 of 10
+                  Audit Logs
                 </span>
               </div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-                System Audit & Security Logs
+                System Audit &amp; Security Logs
               </h2>
               <p className="text-xs text-slate-500 mt-1">
                 Append-only historical records capturing master data modifications, user role changes, previous values, and operator IP addresses.
@@ -320,9 +321,9 @@ export default function AuditLogsPage() {
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="text-slate-400 hover:text-slate-700 text-lg p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

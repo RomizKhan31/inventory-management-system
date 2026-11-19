@@ -89,6 +89,30 @@ export class InventoryController {
   }
 
   /**
+   * List active products for component tracking workstation selector dropdown
+   */
+  static async listActiveProducts(req: Request, res: Response, next: NextFunction) {
+    try {
+      const products = await InventoryService.getActiveProducts();
+      sendResponse(res, 200, 'Active products retrieved successfully', products);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * List active components for component tracking workstation selector dropdown
+   */
+  static async listActiveComponents(req: Request, res: Response, next: NextFunction) {
+    try {
+      const components = await InventoryService.getActiveComponents();
+      sendResponse(res, 200, 'Active components retrieved successfully', components);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * Deliver/issue a product from available warehouse stock
    */
   static async deliverProduct(req: Request, res: Response, next: NextFunction) {

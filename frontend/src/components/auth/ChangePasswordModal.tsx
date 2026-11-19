@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/src/context/AuthContext';
+import { Key, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -55,26 +56,32 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
       <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-lg">Change Password</h3>
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Key className="w-4 h-4 text-slate-600" />
+            <h3 className="font-bold text-slate-900 text-base">Change Password</h3>
+          </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg text-lg leading-none"
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            aria-label="Close"
           >
-            &times;
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 font-medium">
-              ⚠️ {error}
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-medium flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700 font-medium">
-              ✅ Password updated successfully!
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Password updated successfully!</span>
             </div>
           )}
 

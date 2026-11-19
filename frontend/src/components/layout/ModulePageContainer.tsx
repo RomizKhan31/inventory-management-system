@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ProtectedRoute } from '../auth/ProtectedRoute';
 import { UserRole } from '@/src/types/auth';
 import { useAuth } from '@/src/context/AuthContext';
+import { Shield } from 'lucide-react';
 
 interface ModulePageContainerProps {
   title: string;
@@ -89,8 +90,8 @@ export const ModulePageContainer = ({
           <div>{children}</div>
         ) : (
           <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto text-xl font-bold shadow-xs">
-              🛡️
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto shadow-xs">
+              <Shield className="w-6 h-6 text-sky-600" />
             </div>
             <div className="max-w-md mx-auto space-y-1">
               <h3 className="text-base font-bold text-slate-900">RBAC Gate Verified</h3>

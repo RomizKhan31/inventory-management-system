@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { X, AlertCircle } from 'lucide-react';
 
 interface CameraBarcodeScannerModalProps {
   isOpen: boolean;
@@ -108,14 +109,15 @@ export const CameraBarcodeScannerModal: React.FC<CameraBarcodeScannerModalProps>
         {/* Header */}
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <h3 className="text-sm font-bold text-slate-900">{title}</h3>
           </div>
           <button
             onClick={handleManualClose}
-            className="text-slate-400 hover:text-slate-700 text-base p-1 cursor-pointer"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            aria-label="Close"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -128,7 +130,10 @@ export const CameraBarcodeScannerModal: React.FC<CameraBarcodeScannerModalProps>
 
           {errorMsg ? (
             <div className="p-4 m-4 bg-rose-900/80 border border-rose-700 text-rose-200 rounded-xl text-xs text-center space-y-2">
-              <p className="font-bold">📷 Camera Access Error</p>
+              <p className="font-bold flex items-center justify-center space-x-1.5">
+                <AlertCircle className="w-4 h-4 text-rose-400" />
+                <span>Camera Access Error</span>
+              </p>
               <p className="text-[11px] leading-relaxed">{errorMsg}</p>
               <p className="text-[10px] text-slate-300">
                 You can close this window and enter the barcode numbers directly using the manual input field.

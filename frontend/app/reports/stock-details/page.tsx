@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import {
+  Package,
+  Download,
+  Cpu,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
 import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
 import { api, ApiClientError, getToken } from '@/src/lib/api';
@@ -191,19 +198,19 @@ export default function StockDetailsPage() {
           <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center space-x-3">
-                <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  Day 9 of 10 • Real-Time Inventory Ledger
+                <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  Inventory Reports
                 </span>
                 <span className="text-xs text-slate-500 font-mono">
-                  Access: Read-Only (ADMIN &amp; REPORT_VIEWER)
+                  Access: Read-Only
                 </span>
               </div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <span>📦</span>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <Package className="w-5 h-5 text-emerald-600" />
                 <span>Stock Details by Location &amp; Status</span>
               </h1>
-              <p className="text-sm text-slate-600">
-                Live multi-dimensional inventory balances derived directly from the immutable transaction ledger, safeguarding against reversed stock movements.
+              <p className="text-xs text-slate-600">
+                Live multi-dimensional inventory balances derived directly from the immutable transaction ledger.
               </p>
             </div>
 
@@ -212,8 +219,8 @@ export default function StockDetailsPage() {
                 onClick={handleExportCsv}
                 className="inline-flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
               >
-                <span>📥</span>
-                <span>Export to CSV</span>
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
               </button>
               <div className="text-right pl-3 border-l border-slate-200 hidden sm:block">
                 <p className="text-xs font-semibold text-slate-900">{user?.name}</p>
@@ -377,8 +384,9 @@ export default function StockDetailsPage() {
                             {item.productBarcode}
                           </Link>
                           {item.hasReversals && (
-                            <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 mt-0.5">
-                              ⚠️ Reversal Record
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200 mt-0.5">
+                              <AlertTriangle className="w-3 h-3 text-amber-700" />
+                              <span>Reversed</span>
                             </span>
                           )}
                         </td>
@@ -445,9 +453,9 @@ export default function StockDetailsPage() {
                         <td className="px-4 py-3">
                           <button
                             onClick={() => setSelectedItemComponents(item)}
-                            className="inline-flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs border border-slate-200 cursor-pointer"
+                            className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs border border-slate-200 cursor-pointer"
                           >
-                            <span>🧩</span>
+                            <Cpu className="w-3.5 h-3.5 text-purple-600" />
                             <span>{item.componentCount} Bound</span>
                           </button>
                         </td>
@@ -506,9 +514,9 @@ export default function StockDetailsPage() {
                   </div>
                   <button
                     onClick={() => setSelectedItemComponents(null)}
-                    className="text-slate-400 hover:text-slate-600 p-1 font-bold text-sm"
+                    className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
                   >
-                    ✕
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 

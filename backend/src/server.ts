@@ -7,7 +7,7 @@ let server: Server;
 
 const startServer = async () => {
   try {
-    console.log('🚀 Initializing Walton Inventory Management System Backend...');
+    console.log('[Server] Initializing Walton Inventory Management System Backend...');
 
     // 1. Establish MongoDB Atlas / Replica Set Connection
     await connectDatabase();
@@ -17,29 +17,29 @@ const startServer = async () => {
 
     // 3. Start HTTP Server
     server = app.listen(env.PORT, () => {
-      console.log(`✅ Server is running in [${env.NODE_ENV}] mode on port: ${env.PORT}`);
-      console.log(`📡 Health Check URL: http://localhost:${env.PORT}/api/v1/health`);
+      console.log(`[Server] Server is running in [${env.NODE_ENV}] mode on port: ${env.PORT}`);
+      console.log(`[Server] Health Check URL: http://localhost:${env.PORT}/api/v1/health`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error('[Server] Failed to start server:', error);
     process.exit(1);
   }
 };
 
 // Graceful Shutdown Process
 const handleGracefulShutdown = async (signal: string) => {
-  console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+  console.log(`\n[Shutdown] Received ${signal}. Starting graceful shutdown...`);
   if (server) {
     server.close(async () => {
-      console.log('🔒 Closed remaining HTTP connections.');
+      console.log('[Shutdown] Closed remaining HTTP connections.');
       await disconnectDatabase();
-      console.log('👋 Process terminated gracefully.');
+      console.log('[Shutdown] Process terminated gracefully.');
       process.exit(0);
     });
 
     // Force shutdown after 10s timeout
     setTimeout(() => {
-      console.error('⚠️ Could not close connections in time, forcefully shutting down');
+      console.error('[Shutdown] Could not close connections in time, forcefully shutting down');
       process.exit(1);
     }, 10000);
   } else {
