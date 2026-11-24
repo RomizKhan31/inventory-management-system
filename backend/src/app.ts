@@ -16,11 +16,7 @@ export const createApp = (): Application => {
   const app = express();
 
   // 1. Security Middlewares
-  app.use(
-    helmet({
-      contentSecurityPolicy: false, // Allows Swagger UI and local development API tools to render cleanly
-    })
-  );
+  app.use(helmet());
 
   // 2. CORS Configuration
   const allowedOrigins = [
@@ -60,21 +56,9 @@ export const createApp = (): Application => {
     '/api-docs',
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec, {
-      customSiteTitle: 'Walton Inventory Management System API Docs',
-      swaggerOptions: {
-        persistAuthorization: true,
-        displayRequestDuration: true,
-        filter: true,
-        tryItOutEnabled: true,
-      },
+    customSiteTitle: 'Walton Inventory Management System API Docs',
     })
   );
-
-  // Expose raw OpenAPI JSON spec for external testing tools / Postman import
-  app.get('/api-docs.json', (req: Request, res: Response) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).send(swaggerSpec);
-  });
 
   // 6. Root Welcome Route
   app.get('/', (req: Request, res: Response) => {
