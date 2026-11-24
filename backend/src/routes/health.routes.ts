@@ -4,6 +4,21 @@ import { env } from '../config/env';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/v1/health:
+ *   get:
+ *     summary: Check backend health status
+ *     description: Checks the backend server and MongoDB database connection status.
+ *     tags:
+ *       - Health
+ *     responses:
+ *       200:
+ *         description: Backend and database are healthy.
+ *       503:
+ *         description: Backend is running but database is unhealthy.
+ */
+
 router.get('/health', async (req: Request, res: Response) => {
   const dbHealth = getDatabaseHealth();
   const isHealthy = dbHealth.status === 'healthy';

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Package,
   ArrowDownToLine,
@@ -10,37 +10,54 @@ import {
   Cpu,
   RotateCcw,
   Search,
-  Activity,
   ArrowRight,
   RefreshCw,
+  ScanBarcode,
+  BarChart3,
+  ShieldCheck,
+  Database,
+  Users,
+  CheckCircle2,
+  Calendar,
   Layers,
-  ExternalLink,
-} from 'lucide-react';
-import { api, ApiClientError } from '@/src/lib/api';
-import { useAuth } from '@/src/context/AuthContext';
-import { ApiResponse } from '@/src/types/api';
-import { IDashboardResponse } from '@/src/types/inventory';
-import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
+  Sparkles,
+  AlertCircle,
+} from "lucide-react";
+import { api, ApiClientError } from "@/src/lib/api";
+import { useAuth } from "@/src/context/AuthContext";
+import { ApiResponse } from "@/src/types/api";
+import { IDashboardResponse } from "@/src/types/inventory";
+import {
+  ToastNotification,
+  ToastMessage,
+} from "@/src/components/common/ToastNotification";
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
-  const [dashboardData, setDashboardData] = useState<IDashboardResponse | null>(null);
+  const [dashboardData, setDashboardData] = useState<IDashboardResponse | null>(
+    null,
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
-  const [lastRefreshed, setLastRefreshed] = useState<string>('');
+  const [lastRefreshed, setLastRefreshed] = useState<string>("");
 
   const fetchDashboardStats = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true);
     try {
-      const res = await api.get<ApiResponse<IDashboardResponse>>('/inventory/dashboard');
+      const res = await api.get<ApiResponse<IDashboardResponse>>(
+        "/inventory/dashboard",
+      );
       if (res.success && res.data) {
         setDashboardData(res.data);
         setLastRefreshed(new Date().toLocaleTimeString());
       }
     } catch (err: unknown) {
-      const msg = err instanceof ApiClientError ? err.message : 'Failed to load dashboard metrics';
-      setToast({ type: 'error', text: msg });
+      const msg =
+        err instanceof ApiClientError
+          ? err.message
+          : "Failed to load dashboard metrics";
+      setToast({ type: "error", text: msg });
     } finally {
       setLoading(false);
     }
@@ -51,7 +68,9 @@ export default function HomePage() {
     if (isAuthenticated) {
       const load = async () => {
         try {
-          const res = await api.get<ApiResponse<IDashboardResponse>>('/inventory/dashboard');
+          const res = await api.get<ApiResponse<IDashboardResponse>>(
+            "/inventory/dashboard",
+          );
           if (isMounted && res.success && res.data) {
             setDashboardData(res.data);
             setLastRefreshed(new Date().toLocaleTimeString());
@@ -70,26 +89,26 @@ export default function HomePage() {
 
   const renderEventBadge = (eventType: string) => {
     switch (eventType) {
-      case 'RECEIVED':
+      case "RECEIVED":
         return (
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
             RECEIVED
           </span>
         );
-      case 'DELIVERED':
+      case "DELIVERED":
         return (
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
             DELIVERED
           </span>
         );
-      case 'COMPONENT_TRACKED':
+      case "COMPONENT_TRACKED":
         return (
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
             TRACKED
           </span>
         );
       default:
-        if (eventType.startsWith('REVERSED_')) {
+        if (eventType.startsWith("REVERSED_")) {
           return (
             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
               REVERSED
@@ -104,45 +123,119 @@ export default function HomePage() {
     }
   };
 
+  const getRoleHeaderDetails = () => {
+    switch (user?.role) {
+      case "ADMIN":
+        return {
+          title: "Executive Operations Command",
+          subtitle:
+            "Real-time serialized ledger, discrete intake & dispatch metrics, and multi-station oversight.",
+          badge: "System Administrator",
+          badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
+        };
+      case "COMPONENT_TRACKER":
+        return {
+          title: "Component Tracking Station",
+          subtitle:
+            "Scan chassis barcodes and bind serialized modular components (Compressors, Condensers, PCBA) with strict 1-to-N exclusivity.",
+          badge: "Component Tracker",
+          badgeClass: "bg-sky-50 text-sky-700 border-sky-200",
+        };
+      case "RECEIVE_USER":
+        return {
+          title: "Warehouse Intake & Receiving Bay",
+          subtitle:
+            "Admit verified finished products into warehouse inventory bays with atomic component completeness checks.",
+          badge: "Product Receiver",
+          badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        };
+      case "DELIVERY_USER":
+        return {
+          title: "Outbound Dispatch & Delivery Dock",
+          subtitle:
+            "Dispatch available stock units through logistics delivery docks while preserving intake bay provenance.",
+          badge: "Product Deliverer",
+          badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+        };
+      case "REPORT_VIEWER":
+        return {
+          title: "Inventory Intelligence & Audit Hub",
+          subtitle:
+            "Serialized stock balance analytics, throughput velocity summaries, and end-to-end barcode lifecycle journeys.",
+          badge: "Report Viewer",
+          badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
+        };
+      default:
+        return {
+          title: "Operational Dashboard",
+          subtitle:
+            "Real-time serialized stock levels, intake and delivery metrics.",
+          badge: user?.role || "Staff",
+          badgeClass: "bg-slate-100 text-slate-700 border-slate-200",
+        };
+    }
+  };
+
+  const headerDetails = getRoleHeaderDetails();
+
   return (
     <div className="space-y-6">
       {/* Toast Notification */}
       <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
-      {/* Dashboard Header Bar */}
-      {isAuthenticated && user && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Operational Dashboard
-            </h1>
-            <p className="text-xs text-slate-500">
-              Real-time serialized stock levels, intake and delivery metrics
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {lastRefreshed && (
-              <span className="text-[11px] text-slate-400 font-mono">
-                Updated: {lastRefreshed}
-              </span>
-            )}
-            <button
-              onClick={fetchDashboardStats}
-              disabled={loading}
-              title="Refresh Data"
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Authenticated Dashboard Core */}
       {isAuthenticated && user ? (
         <div className="space-y-6">
+          {/* 1. Professional Role Header Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${headerDetails.badgeClass}`}
+                  >
+                    {headerDetails.badge}
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-xs text-slate-500 font-mono">
+                    ID: {user.userCode}
+                  </span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  {headerDetails.title}
+                </h1>
+                <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
+                  {headerDetails.subtitle}
+                </p>
+              </div>
+
+              {/* Status & Refresh Controls */}
+              <div className="flex flex-row md:flex-col items-start md:items-end justify-between gap-2 shrink-0">
+                <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Ledger Online</span>
+                  {lastRefreshed && (
+                    <span className="text-slate-400 font-mono text-[10px]">
+                      ({lastRefreshed})
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  onClick={fetchDashboardStats}
+                  disabled={loading}
+                  title="Refresh Data"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 text-slate-500 ${loading ? "animate-spin" : ""}`}
+                  />
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Loading Indicator */}
           {loading && !dashboardData && (
             <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-500 text-xs">
@@ -151,36 +244,62 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Primary Dashboard KPI Metric Cards */}
+          {/* 2. Primary KPI Cards */}
           {dashboardData && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Card 1: Current Stock Count */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-slate-300 transition-all space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Current Stock Count
-                  </span>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                    <Package className="w-4 h-4 text-emerald-600" />
+              {/* Card 1: Current Stock Count (or WIP for Component Tracker) */}
+              {user.role === "COMPONENT_TRACKER" ? (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      WIP In Assembly
+                    </span>
+                    <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
+                      <Layers className="w-4 h-4 text-sky-600" />
+                    </div>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-black text-sky-600">
+                    {dashboardData.metrics.totalTrackedWipCount}
+                  </p>
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                    <span className="text-slate-500">Ready for intake bay</span>
+                    <Link
+                      href="/operations/component-tracking"
+                      className="font-bold text-sky-600 hover:text-sky-800 flex items-center gap-1"
+                    >
+                      <span>Tracking</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
                   </div>
                 </div>
-                <p className="text-2xl sm:text-3xl font-black text-slate-900">
-                  {dashboardData.metrics.currentStockCount}
-                </p>
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-                  <span className="text-slate-500">In warehouse stock</span>
-                  <Link
-                    href="/reports/stock-details?status=IN_STOCK"
-                    className="font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
-                  >
-                    <span>View Stock</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
+              ) : (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Current Stock Count
+                    </span>
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                      <Package className="w-4 h-4 text-emerald-600" />
+                    </div>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-black text-slate-900">
+                    {dashboardData.metrics.currentStockCount}
+                  </p>
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                    <span className="text-slate-500">In warehouse stock</span>
+                    <Link
+                      href="/reports/stock-details?status=IN_STOCK"
+                      className="font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+                    >
+                      <span>View Stock</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Card 2: Today's Received Products */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-slate-300 transition-all space-y-2">
+              {/* Card 2: Today's Received */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Today&apos;s Received
@@ -204,8 +323,8 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Card 3: Today's Delivered Products */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-slate-300 transition-all space-y-2">
+              {/* Card 3: Today's Delivered */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Today&apos;s Delivered
@@ -230,7 +349,7 @@ export default function HomePage() {
               </div>
 
               {/* Card 4: Longest in Stock Alert */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-slate-300 transition-all space-y-2">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Aging Inventory
@@ -242,7 +361,7 @@ export default function HomePage() {
                 <p className="text-2xl sm:text-3xl font-black text-amber-600">
                   {dashboardData.longestInStockProducts.length > 0
                     ? `${dashboardData.longestInStockProducts[0].daysInStock}d`
-                    : '0d'}
+                    : "0d"}
                 </p>
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
                   <span className="text-slate-500">Max days in stock</span>
@@ -258,336 +377,366 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Quick Operational Shortcuts Grid */}
+          {/* 3. Role-Tailored Operational Workstations */}
           <div className="space-y-3">
-            <h2 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-              Operational Workstations
+            <h2 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+              <span>Authorized Workstations</span>
+              <span className="text-[10px] font-normal text-slate-400">
+                (Role-Specific Modules)
+              </span>
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {(user.role === 'ADMIN' || user.role === 'COMPONENT_TRACKER') && (
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Component Tracking Workstation */}
+              {(user.role === "ADMIN" || user.role === "COMPONENT_TRACKER") && (
                 <Link
                   href="/operations/component-tracking"
-                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50/20 transition-all shadow-xs group"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/20 transition-all shadow-2xs group flex flex-col justify-between"
                 >
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
-                      <Cpu className="w-4 h-4 text-purple-600" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <Cpu className="w-5 h-5 text-sky-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+                        Assembly
+                      </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-purple-700">
-                      Component Tracking
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-sky-700 transition-colors">
+                      Component Tracking Station
                     </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Scan chassis barcodes and bind modular serialized components
+                      (Compressors, Condensers, PCBA) with strict 1-to-N serial
+                      exclusivity.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Scan chassis barcode and bind modular components with 1-to-N serial exclusivity.
-                  </p>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-sky-600 group-hover:text-sky-700">
+                    <span>Launch Station</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </Link>
               )}
 
-              {(user.role === 'ADMIN' || user.role === 'RECEIVE_USER') && (
+              {/* Product Receiving Workstation */}
+              {(user.role === "ADMIN" || user.role === "RECEIVE_USER") && (
                 <Link
                   href="/operations/receive"
-                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all shadow-xs group"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all shadow-2xs group flex flex-col justify-between"
                 >
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                      <ArrowDownToLine className="w-4 h-4 text-emerald-600" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <ArrowDownToLine className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Intake Bay
+                      </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700">
-                      Product Receiving
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+                      Product Receiving Intake
                     </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Admit verified finished goods into warehouse stock at
+                      designated intake bays with atomic sub-assembly verification.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Admit verified finished goods into warehouse stock at designated intake bays.
-                  </p>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
+                    <span>Launch Station</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </Link>
               )}
 
-              {(user.role === 'ADMIN' || user.role === 'DELIVERY_USER') && (
+              {/* Product Delivery Workstation */}
+              {(user.role === "ADMIN" || user.role === "DELIVERY_USER") && (
                 <Link
                   href="/operations/delivery"
-                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/20 transition-all shadow-xs group"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/20 transition-all shadow-2xs group flex flex-col justify-between"
                 >
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
-                      <Truck className="w-4 h-4 text-blue-600" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <Truck className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        Outbound Dock
+                      </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700">
-                      Product Delivery
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                      Product Delivery &amp; Dispatch
                     </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Dispatch available units through dock stations, preserving
+                      origin intake bay reference in the transaction history.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Dispatch available units through dock stations, preserving origin intake bay reference.
-                  </p>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:text-blue-700">
+                    <span>Launch Station</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </Link>
               )}
 
-              {user.role === 'ADMIN' && (
+              {/* Admin Reversals Workstation */}
+              {user.role === "ADMIN" && (
                 <Link
                   href="/operations/reversals"
-                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-rose-300 hover:bg-rose-50/20 transition-all shadow-xs group"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-rose-300 hover:bg-rose-50/20 transition-all shadow-2xs group flex flex-col justify-between"
                 >
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center">
-                      <RotateCcw className="w-4 h-4 text-rose-600" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <RotateCcw className="w-5 h-5 text-rose-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        Compensating
+                      </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-rose-700">
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-rose-700 transition-colors">
                       Reversals &amp; Corrections
                     </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Administrative compensating reversals with mandatory audit
+                      justification reasons.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Administrative compensating reversals with mandatory audit justification reasons.
-                  </p>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-rose-600 group-hover:text-rose-700">
+                    <span>Audit Reversals</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </Link>
               )}
 
-              {(user.role === 'ADMIN' || user.role === 'REPORT_VIEWER') && (
+              {/* Stock Details Report (Report Viewer & Admin) */}
+              {(user.role === "ADMIN" || user.role === "REPORT_VIEWER") && (
                 <Link
                   href="/reports/stock-details"
-                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all shadow-xs group"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all shadow-2xs group flex flex-col justify-between"
                 >
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                      <Package className="w-4 h-4 text-emerald-600" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <Package className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Inventory Ledger
+                      </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700">
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
                       Stock Details Report
                     </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Real-time stock balances by physical intake bay, days in
+                      inventory, and modular sub-assembly lists.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Real-time stock balances by location, days in inventory, and modular component lists.
-                  </p>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
+                    <span>View Report</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </Link>
               )}
 
-              {(user.role === 'ADMIN' || user.role === 'REPORT_VIEWER') && (
+              {/* Barcode Journey (Report Viewer & Admin) */}
+              {(user.role === "ADMIN" || user.role === "REPORT_VIEWER") && (
                 <Link
                   href="/reports/barcode-history"
-                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50/20 transition-all shadow-xs group"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50/20 transition-all shadow-2xs group flex flex-col justify-between"
                 >
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
-                      <Search className="w-4 h-4 text-purple-600" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <ScanBarcode className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                        Lifecycle Trace
+                      </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-purple-700">
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
                       Barcode Lifecycle Journey
                     </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Chronological event timeline for any chassis or sub-assembly
+                      barcode from assembly to dispatch.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Trace any chassis barcode from assembly through intake, dispatch, and reversals.
-                  </p>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-purple-600 group-hover:text-purple-700">
+                    <span>Trace Barcode</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </Link>
+              )}
+
+              {/* Summary & Trends (Report Viewer & Admin) */}
+              {(user.role === "ADMIN" || user.role === "REPORT_VIEWER") && (
+                <Link
+                  href="/reports/summary"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/20 transition-all shadow-2xs group flex flex-col justify-between"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <BarChart3 className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        Throughput
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                      Summary &amp; Trends Analytics
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Date-range throughput aggregates, net intake/dispatch
+                      velocity charts, and operator stats.
+                    </p>
+                  </div>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600 group-hover:text-blue-700">
+                    <span>Analyze Trends</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              )}
+
+              {/* Admin Master Catalogs */}
+              {user.role === "ADMIN" && (
+                <Link
+                  href="/admin/master-data"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/20 transition-all shadow-2xs group flex flex-col justify-between"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <Database className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        Master Data
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                      Master Catalogs
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Manage registered product models, component definitions, and
+                      physical warehouse bay locations.
+                    </p>
+                  </div>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600 group-hover:text-indigo-700">
+                    <span>Manage Catalogs</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              )}
+
+              {/* Admin User Management */}
+              {user.role === "ADMIN" && (
+                <Link
+                  href="/admin/users"
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-50/50 transition-all shadow-2xs group flex flex-col justify-between"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <Users className="w-5 h-5 text-slate-600" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                        RBAC
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-slate-950 transition-colors">
+                      User Management
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Manage operator employee IDs, credential resets, and single
+                      clearance role assignments.
+                    </p>
+                  </div>
+                  <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 group-hover:text-slate-900">
+                    <span>Manage Users</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              )}
+
+              {/* Standard Operating Procedure (SOP) Guide for Single-Role Workstations */}
+              {user.role === "COMPONENT_TRACKER" && (
+                <div className="p-5 rounded-2xl bg-linear-to-br from-sky-50/50 to-white border border-sky-200/80 shadow-2xs space-y-3">
+                  <div className="flex items-center space-x-2 text-sky-800 font-bold text-xs">
+                    <ScanBarcode className="w-4 h-4 text-sky-600" />
+                    <span>Barcode Scanner Operational Rules</span>
+                  </div>
+                  <ul className="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                    <li>Accepts laser barcode scan or physical keyboard entry</li>
+                    <li>Scan chassis barcode first to initialize binding</li>
+                    <li>
+                      Strict 1-to-N serial exclusivity: Duplicate component
+                      barcodes will be rejected
+                    </li>
+                    <li>
+                      Audio beep alerts provide real-time scan verification
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {user.role === "RECEIVE_USER" && (
+                <div className="p-5 rounded-2xl bg-linear-to-br from-emerald-50/50 to-white border border-emerald-200/80 shadow-2xs space-y-3">
+                  <div className="flex items-center space-x-2 text-emerald-800 font-bold text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Warehouse Intake Guidelines</span>
+                  </div>
+                  <ul className="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                    <li>Select target physical bay prior to scanning chassis</li>
+                    <li>
+                      Atomic verification ensures all required sub-assemblies are
+                      bound
+                    </li>
+                    <li>
+                      Status transitions atomically from TRACKED to IN_STOCK
+                    </li>
+                    <li>Instant ledger recording with physical location audit</li>
+                  </ul>
+                </div>
+              )}
+
+              {user.role === "DELIVERY_USER" && (
+                <div className="p-5 rounded-2xl bg-linear-to-br from-amber-50/50 to-white border border-amber-200/80 shadow-2xs space-y-3">
+                  <div className="flex items-center space-x-2 text-amber-800 font-bold text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-amber-600" />
+                    <span>Outbound Dispatch Protocol</span>
+                  </div>
+                  <ul className="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                    <li>Select designated outbound delivery dock station</li>
+                    <li>Only products currently in IN_STOCK can be dispatched</li>
+                    <li>
+                      Origin intake bay reference is preserved for audit trail
+                    </li>
+                    <li>
+                      Delivery dispatches transition status directly to DELIVERED
+                    </li>
+                  </ul>
+                </div>
               )}
             </div>
           </div>
-
-          {/* Section: Products That Have Remained in Stock the Longest */}
-          {dashboardData && (
-            <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-6 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-                <div>
-                  <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-600" />
-                    <span>Aging Inventory Analysis (Longest in Stock)</span>
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Prioritize movement of aged inventory to maintain discrete warehouse turnover.
-                  </p>
-                </div>
-                <Link
-                  href="/reports/stock-details?status=IN_STOCK"
-                  className="text-xs font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1"
-                >
-                  <span>View Full Stock Details</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="min-w-full divide-y divide-slate-200 text-xs">
-                  <thead className="bg-slate-50 text-slate-600 font-semibold uppercase">
-                    <tr>
-                      <th className="px-4 py-3 text-left">Chassis Barcode</th>
-                      <th className="px-4 py-3 text-left">Product Model</th>
-                      <th className="px-4 py-3 text-left">Receive Bay</th>
-                      <th className="px-4 py-3 text-left">Intake Date</th>
-                      <th className="px-4 py-3 text-left">Days in Stock</th>
-                      <th className="px-4 py-3 text-left">Components</th>
-                      <th className="px-4 py-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 bg-white">
-                    {dashboardData.longestInStockProducts.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-slate-400 italic">
-                          No finished goods currently in warehouse stock.
-                        </td>
-                      </tr>
-                    ) : (
-                      dashboardData.longestInStockProducts.map((prod) => (
-                        <tr key={prod.productBarcode} className="hover:bg-slate-50/70">
-                          <td className="px-4 py-3">
-                            <Link
-                              href={`/reports/barcode-history?barcode=${prod.productBarcode}`}
-                              className="font-mono font-bold text-emerald-700 hover:text-emerald-900 hover:underline"
-                            >
-                              {prod.productBarcode}
-                            </Link>
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-slate-900">
-                            {prod.productModel}
-                          </td>
-                          <td className="px-4 py-3 text-slate-700">
-                            {prod.currentReceivePoint}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-slate-500">
-                            {new Date(prod.receivedAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                                prod.daysInStock <= 7
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : prod.daysInStock <= 30
-                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
-                              }`}
-                            >
-                              {prod.daysInStock === 0 ? 'Today' : `${prod.daysInStock} days`}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
-                              <Cpu className="w-3.5 h-3.5 text-purple-600" />
-                              <span>{prod.componentCount} Bound</span>
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <Link
-                              href={`/reports/barcode-history?barcode=${prod.productBarcode}`}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-50 rounded-lg border border-purple-200 transition-colors"
-                            >
-                              <span>Lifecycle</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </Link>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Real-Time Ledger Feed & System Overview Grid */}
-          {dashboardData && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Recent Activity Feed */}
-              <div className="lg:col-span-2 bg-white rounded-2xl shadow-xs border border-slate-200 p-6 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-sky-600" />
-                    <span>Real-Time Event Ledger Feed</span>
-                  </h3>
-                  <span className="text-[11px] text-slate-500 font-mono">
-                    Last 8 transactions
-                  </span>
-                </div>
-
-                <div className="space-y-2.5">
-                  {dashboardData.recentTransactions.map((tx) => (
-                    <div
-                      key={tx._id}
-                      className={`p-3 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
-                        tx.isReversal
-                          ? 'bg-amber-50/70 border-amber-200'
-                          : 'bg-slate-50/70 border-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        {renderEventBadge(tx.eventType)}
-                        <div>
-                          <Link
-                            href={`/reports/barcode-history?barcode=${tx.productBarcode}`}
-                            className="font-mono font-bold text-slate-900 hover:underline"
-                          >
-                            {tx.productBarcode}
-                          </Link>
-                          <span className="text-slate-500 font-normal">
-                            {' '}
-                            • {tx.pointName}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-3 text-[11px] text-slate-500 font-mono">
-                        <span>
-                          {tx.userName} ({tx.userCode})
-                        </span>
-                        <span>•</span>
-                        <span>{new Date(tx.createdAt).toLocaleTimeString()}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Master System Overview */}
-              <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-6 space-y-4">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-slate-600" />
-                  <span>Master System Architecture</span>
-                </h3>
-
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-slate-600">Database Engine</span>
-                    <span className="font-bold text-emerald-700">MongoDB Atlas Replica</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-slate-600">Active Intake Bays</span>
-                    <span className="font-bold text-slate-900">
-                      {dashboardData.systemSummary.activeReceiveBaysCount} bays
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-slate-600">Active Dispatch Docks</span>
-                    <span className="font-bold text-slate-900">
-                      {dashboardData.systemSummary.activeDeliveryDocksCount} docks
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-slate-600">Master Product Catalog</span>
-                    <span className="font-bold text-slate-900">
-                      {dashboardData.systemSummary.activeProductsCatalogCount} models
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-slate-600">Modular Components</span>
-                    <span className="font-bold text-slate-900">
-                      {dashboardData.systemSummary.activeComponentsCatalogCount} types
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       ) : (
         /* Guest / Unauthenticated Landing View */
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
             <div className="space-y-1 max-w-2xl">
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-3xl font-bold text-slate-900">
                 Discrete Manufacturing Inventory System
               </h2>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Industrial serialized inventory execution system built for Walton Hi-Tech Industries PLC. Sign in with your assigned employee ID to access authorized workstations.
+              <p className="my-6 text-lg text-slate-500 leading-normal">
+                Industrial serialized inventory execution system built for
+                Walton Hi-Tech Industries PLC. Sign in with your assigned
+                employee ID to access authorized workstations.
               </p>
             </div>
             <Link
               href="/login"
-              className="inline-flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-xs shrink-0 cursor-pointer"
+              className="inline-flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-xs shrink-0 cursor-pointer"
             >
               <span>Sign In to Workstations</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -597,37 +746,43 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
               <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
-                <Cpu className="w-4 h-4 text-sky-600" />
+                <Cpu className="w-6 h-6 text-emerald-600" />
               </div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase">
+              <h3 className="text-lg font-bold text-slate-900 uppercase">
                 1. Modular Assembly Binding
               </h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Scan product chassis and attach 1-to-N serialized components (Compressors, Condensers, PCBA) with strict duplicate prevention.
+              <p className="text-[16px] text-slate-500 leading-normal">
+                Scan product chassis and attach 1-to-N serialized components
+                (Compressors, Condensers, PCBA) with strict duplicate
+                prevention.
               </p>
             </div>
 
             <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                <ArrowDownToLine className="w-4 h-4 text-emerald-600" />
+                <ArrowDownToLine className="w-6 h-6 text-emerald-600" />
               </div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase">
+              <h3 className="text-lg font-bold text-slate-900 uppercase">
                 2. Warehouse Intake Receiving
               </h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Atomic barcode verification ensuring required sub-assemblies are bound before admitting units into stock at designated receive points.
+              <p className="text-[16px] text-slate-500 leading-normal">
+                Atomic barcode verification ensuring required sub-assemblies are
+                bound before admitting units into stock at designated receive
+                points.
               </p>
             </div>
 
             <div className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
               <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
-                <Truck className="w-4 h-4 text-blue-600" />
+                <Truck className="w-6 h-6 text-emerald-600" />
               </div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase">
+              <h3 className="text-lg font-bold text-slate-900 uppercase">
                 3. Dispatch Dock Delivery
               </h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Issue verified inventory from active stock through delivery points while preserving original intake bay provenance in the transaction history.
+              <p className="text-[16px] text-slate-500 leading-normal">
+                Issue verified inventory from active stock through delivery
+                points while preserving original intake bay provenance in the
+                transaction history.
               </p>
             </div>
           </div>

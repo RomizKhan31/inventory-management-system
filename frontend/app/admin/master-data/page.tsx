@@ -12,7 +12,6 @@ import {
   X,
 } from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
-import { AdminSidebar } from '@/src/components/admin/AdminSidebar';
 import { AdminStatsCards } from '@/src/components/admin/AdminStatsCards';
 import { ConfirmationModal } from '@/src/components/common/ConfirmationModal';
 import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
@@ -482,11 +481,7 @@ export default function MasterDataPage() {
 
         <ToastNotification toast={toast} onClose={() => setToast(null)} />
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          <AdminSidebar />
-
-          <main className="flex-1 space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -933,9 +928,7 @@ export default function MasterDataPage() {
                 </div>
               </div>
             </div>
-          </main>
-        </div>
-      </div>
+          </div>
 
       {/* ---------------- CREATE MODAL ---------------- */}
       {isCreateModalOpen && (

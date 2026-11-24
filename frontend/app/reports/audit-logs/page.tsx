@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
-import { AdminSidebar } from '@/src/components/admin/AdminSidebar';
 import { AdminStatsCards } from '@/src/components/admin/AdminStatsCards';
 import { api, ApiClientError } from '@/src/lib/api';
 import { IAuditLogItem, IPaginationMeta } from '@/src/types/admin';
@@ -124,12 +123,8 @@ export default function AuditLogsPage() {
       <div className="space-y-6">
         <AdminStatsCards />
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          <AdminSidebar />
-
-          <main className="flex-1 space-y-6">
-            {/* Header */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        {/* Header */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center space-x-2">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Compliance &amp; Traceability
@@ -302,9 +297,7 @@ export default function AuditLogsPage() {
                 </div>
               </div>
             </div>
-          </main>
-        </div>
-      </div>
+          </div>
 
       {/* ---------------- INSPECT DELTA MODAL ---------------- */}
       {selectedLog && (

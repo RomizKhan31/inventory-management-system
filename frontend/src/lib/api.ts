@@ -64,7 +64,15 @@ export async function apiFetch<T>(
         removeToken();
       }
 
-      const errorMessage = data?.message || `Request failed with status: ${response.status}`;
+      let errorMessage = data?.message || `Request failed with status: ${response.status}`;
+      if (Array.isArray(data?.details) && data.details.length > 0) {
+        const detailMessages = data.details
+          .map((d: any) => d?.message || (typeof d === 'string' ? d : ''))
+          .filter(Boolean);
+        if (detailMessages.length > 0) {
+          errorMessage = detailMessages.join(', ');
+        }
+      }
       throw new ApiClientError(
         errorMessage,
         response.status,

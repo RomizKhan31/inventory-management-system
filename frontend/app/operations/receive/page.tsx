@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   AlertCircle,
-  Camera,
+  ScanBarcode,
   RotateCcw,
   Zap,
   Check,
@@ -15,7 +15,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
-import { CameraBarcodeScannerModal, playAudioBeep } from '@/src/components/scanner/CameraBarcodeScannerModal';
+import { playAudioBeep } from '@/src/utils/audio';
 import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
 import { api, ApiClientError } from '@/src/lib/api';
 import { useAuth } from '@/src/context/AuthContext';
@@ -84,7 +84,6 @@ export default function ProductReceivingPage() {
   const [receiveLoading, setReceiveLoading] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [warningAlert, setWarningAlert] = useState<string | null>(null);
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [receiveSuccessReceipt, setReceiveSuccessReceipt] = useState<ReceiveResult | null>(null);
 
@@ -334,12 +333,12 @@ export default function ProductReceivingPage() {
           </div>
 
           <div className="flex items-center space-x-3 shrink-0">
-            <div className="text-right hidden sm:block">
+            {/* <div className="text-right hidden sm:block">
               <p className="text-xs font-bold text-slate-900">{user?.name}</p>
               <p className="text-[11px] font-mono text-slate-500">
                 Badge: {user?.userCode} ({user?.role})
               </p>
-            </div>
+            </div> */}
             <button
               onClick={handleResetStation}
               className="px-3.5 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
@@ -449,25 +448,27 @@ export default function ProductReceivingPage() {
 
               <form onSubmit={handleProductScanSubmit} className="space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Scan or Enter Product Chassis Barcode
+                  <label className="flex items-center justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>Scan or Enter Product Chassis Barcode</span>
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <ScanBarcode className="w-3 h-3" />
+                      <span>Laser Scanner Ready</span>
+                    </span>
                   </label>
                   <div className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. 2440701AK2057"
-                      value={productBarcode}
-                      onChange={(e) => setProductBarcode(e.target.value)}
-                      className="flex-1 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 uppercase font-mono font-bold text-slate-900"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsScannerOpen(true)}
-                      className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 cursor-pointer shrink-0"
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      <span>Camera</span>
-                    </button>
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <ScanBarcode className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Scan chassis barcode (e.g. 2440701AK2057)..."
+                        value={productBarcode}
+                        onChange={(e) => setProductBarcode(e.target.value)}
+                        className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 uppercase font-mono font-bold text-slate-900"
+                        autoFocus
+                      />
+                    </div>
                     <button
                       type="submit"
                       disabled={loading || !productBarcode.trim()}
@@ -477,8 +478,9 @@ export default function ProductReceivingPage() {
                       <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Accepts laser barcode scan, camera scanner, or keyboard input.
+                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                    <ScanBarcode className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span>Accepts laser barcode scan or keyboard input.</span>
                   </p>
                 </div>
               </form>
@@ -770,18 +772,6 @@ export default function ProductReceivingPage() {
             </div>
           </div>
         )}
-
-        {/* Camera Barcode Scanner Modal */}
-        <CameraBarcodeScannerModal
-          isOpen={isScannerOpen}
-          onClose={() => setIsScannerOpen(false)}
-          onScanSuccess={(detectedBarcode) => {
-            setIsScannerOpen(false);
-            setProductBarcode(detectedBarcode);
-            handleProductScanSubmit(undefined, detectedBarcode);
-          }}
-          title="Scan Product Chassis Barcode"
-        />
       </div>
     </ProtectedRoute>
   );

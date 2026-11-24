@@ -19,7 +19,8 @@ export const errorHandler = (
   if (err instanceof ZodError) {
     statusCode = 422;
     errorCode = 'VALIDATION_ERROR';
-    message = 'Request validation failed';
+    const issueMessages = err.issues.map((e) => e.message).filter(Boolean);
+    message = issueMessages.length > 0 ? issueMessages.join(', ') : 'Request validation failed';
     details = err.issues.map((e) => ({
       path: e.path.join('.'),
       message: e.message,
@@ -30,7 +31,8 @@ export const errorHandler = (
   if (err instanceof mongoose.Error.ValidationError) {
     statusCode = 422;
     errorCode = 'MONGOOSE_VALIDATION_ERROR';
-    message = 'Database validation constraint failed';
+    const validationMessages = Object.values(err.errors).map((e: any) => e.message).filter(Boolean);
+    message = validationMessages.length > 0 ? validationMessages.join(', ') : 'Database validation constraint failed';
     details = Object.values(err.errors).map((e: any) => ({
       field: e.path,
       message: e.message,

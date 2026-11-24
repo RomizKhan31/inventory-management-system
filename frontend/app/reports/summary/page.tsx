@@ -179,10 +179,10 @@ export default function SummaryTrendsPage() {
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
               </button>
-              <div className="text-right pl-3 border-l border-slate-200 hidden sm:block">
+              {/* <div className="text-right pl-3 border-l border-slate-200 hidden sm:block">
                 <p className="text-xs font-semibold text-slate-900">{user?.name}</p>
                 <p className="text-xs text-slate-500 font-mono">Role: {user?.role}</p>
-              </div>
+              </div> */}
             </div>
           </div>
 

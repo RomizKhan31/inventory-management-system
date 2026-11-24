@@ -58,14 +58,14 @@ export default function LoginPage() {
     <div className="min-h-[75vh] flex items-center justify-center py-6">
       <div className="w-full max-w-md space-y-6">
         {/* Header Title with Walton Logo */}
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 mx-auto relative flex items-center justify-center">
+        <div className="text-center space-y-1">
+          <div className="w-24 h-24 mx-auto relative flex items-center justify-center">
             <Image
-              src="/walton_logo.webp"
+              src="/walton_logo.png"
               alt="Walton Logo"
-              width={48}
-              height={48}
-              className="w-12 h-12 object-contain"
+              width={64}
+              height={64}
+              className="w-24 h-24 object-contain"
               priority
             />
           </div>

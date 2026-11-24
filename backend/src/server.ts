@@ -30,7 +30,7 @@ const startServer = async () => {
 const handleGracefulShutdown = async (signal: string) => {
   console.log(`\n[Shutdown] Received ${signal}. Starting graceful shutdown...`);
   if (server) {
-    server.close(async () => {
+    server.close(async () => {      
       console.log('[Shutdown] Closed remaining HTTP connections.');
       await disconnectDatabase();
       console.log('[Shutdown] Process terminated gracefully.');

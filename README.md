@@ -41,7 +41,7 @@ The system tracks serialized physical products through an immutable 7-stage life
 
 | Layer | Technology | Key Libraries / Features |
 | :--- | :--- | :--- |
-| **Frontend** | **Next.js 16 (App Router)** | React 19, TypeScript, Tailwind CSS v4, HTML5 Barcode Camera Scanner |
+| **Frontend** | **Next.js 16 (App Router)** | React 19, TypeScript, Tailwind CSS v4, Laser Barcode Scanner (HID) |
 | **Backend** | **Node.js (v24+) & Express.js 5** | TypeScript, Helmet, CORS, Morgan, Zod, Mutex Locks |
 | **Database** | **MongoDB Atlas / Replica Set** | Mongoose 9 ODM, Multi-Document ACID Transaction Sessions |
 | **Security** | **JWT & bcryptjs** | Salt rounds: 12, Bearer Token validation, soft deactivation, forced logout |
@@ -219,7 +219,7 @@ inventory-management-system/
 │   │   ├── login/                  # Authentication & Sign-in
 │   │   └── page.tsx                # Operational Dashboard & Aging Inventory Analysis
 │   └── src/
-│       ├── components/             # Reusable UI components, modals, camera scanner, toasts
+│       ├── components/             # Reusable UI components, modals, toasts
 │       ├── context/                # AuthContext & Session management
 │       ├── lib/                    # Typed API client
 │       └── types/                  # TypeScript interface contracts

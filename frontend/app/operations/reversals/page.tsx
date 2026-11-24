@@ -7,7 +7,7 @@ import {
   FileText,
   Search,
   Target,
-  Camera,
+  ScanBarcode,
   CheckCircle2,
   AlertTriangle,
   AlertCircle,
@@ -18,7 +18,7 @@ import {
   Check,
 } from 'lucide-react';
 import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute';
-import { CameraBarcodeScannerModal, playAudioBeep } from '@/src/components/scanner/CameraBarcodeScannerModal';
+import { playAudioBeep } from '@/src/utils/audio';
 import { ToastNotification, ToastMessage } from '@/src/components/common/ToastNotification';
 import { api, ApiClientError } from '@/src/lib/api';
 import { useAuth } from '@/src/context/AuthContext';
@@ -78,8 +78,7 @@ export default function ReversalsPage() {
   const [submittingReversal, setSubmittingReversal] = useState(false);
   const [reversalReceipt, setReversalReceipt] = useState<IReversalResponse | null>(null);
 
-  // Scanner Modal & Toast
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  // Toast
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // Fetch Global Transactions
@@ -357,10 +356,10 @@ export default function ReversalsPage() {
                 <FileText className="w-3.5 h-3.5" />
                 <span>Audit Logs Trail</span>
               </Link>
-              <div className="text-right pl-3 border-l border-slate-200 hidden sm:block">
+              {/* <div className="text-right pl-3 border-l border-slate-200 hidden sm:block">
                 <p className="text-xs font-semibold text-slate-900">{user?.name || 'Administrator'}</p>
                 <p className="text-xs text-slate-500 font-mono">Role: ADMIN ({user?.userCode})</p>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -472,32 +471,27 @@ export default function ReversalsPage() {
 
                 <form onSubmit={handleChassisSearch} className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <ScanBarcode className="w-4 h-4 text-slate-500" />
+                    </div>
                     <input
                       type="text"
                       value={searchBarcode}
                       onChange={(e) => setSearchBarcode(e.target.value.toUpperCase())}
-                      placeholder="Enter or scan product chassis barcode (e.g. 2440701AK2057)..."
-                      className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-rose-500 focus:border-rose-500 uppercase placeholder:normal-case transition-all"
+                      placeholder="Scan with laser or enter product barcode (e.g. 2440701AK2057)..."
+                      className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 text-sm font-mono focus:ring-2 focus:ring-rose-500 focus:border-rose-500 uppercase placeholder:normal-case transition-all"
+                      autoFocus
                     />
                     {searchBarcode && (
                       <button
                         type="button"
                         onClick={() => setSearchBarcode('')}
-                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5"
+                        className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     )}
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsScannerOpen(true)}
-                    className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-xl border border-slate-300 transition-colors flex items-center justify-center space-x-2 cursor-pointer"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>Scan Camera</span>
-                  </button>
 
                   <button
                     type="submit"
@@ -517,6 +511,10 @@ export default function ReversalsPage() {
                     )}
                   </button>
                 </form>
+                <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+                  <ScanBarcode className="w-3 h-3 text-slate-400 shrink-0" />
+                  <span>Accepts laser barcode scan or keyboard input.</span>
+                </p>
               </div>
 
               {/* Chassis Details Card */}
@@ -1113,17 +1111,6 @@ export default function ReversalsPage() {
               </div>
             </div>
           )}
-
-          {/* Camera Scanner Modal */}
-          <CameraBarcodeScannerModal
-            isOpen={isScannerOpen}
-            onClose={() => setIsScannerOpen(false)}
-            onScanSuccess={(decodedText) => {
-              setSearchBarcode(decodedText);
-              setIsScannerOpen(false);
-              handleChassisSearch(undefined, decodedText);
-            }}
-          />
         </div>
       </div>
     </ProtectedRoute>
