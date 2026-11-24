@@ -34,8 +34,16 @@ REST API documentation for Walton Hi-Tech Industries PLC.
     },
     servers: [
       {
+        url: '/',
+        description: 'Current Host (Relative URL - Recommended)',
+      },
+      {
         url: `http://localhost:${env.PORT}`,
-        description: 'Local Development Server',
+        description: 'Local Development Server (localhost)',
+      },
+      {
+        url: `http://127.0.0.1:${env.PORT}`,
+        description: 'Local Development Server (127.0.0.1)',
       },
     ],
     tags: [

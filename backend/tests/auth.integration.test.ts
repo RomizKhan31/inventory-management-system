@@ -183,6 +183,49 @@ async function runTests() {
     });
     assert(logoutRes.status === 200, 'User Logout returns 200 OK');
 
+    // 16. CORS Validation: Server self origin (Swagger UI on port 5000) allowed
+    const corsSwaggerRes = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:5000',
+        'Access-Control-Request-Method': 'POST',
+      },
+    });
+    assert(
+      corsSwaggerRes.status === 204 &&
+        corsSwaggerRes.headers.get('access-control-allow-origin') === 'http://localhost:5000',
+      'CORS: Swagger UI origin (http://localhost:5000) permitted with preflight 204'
+    );
+
+    // 17. CORS Validation: Frontend origin (http://localhost:3000) allowed
+    const corsFrontendRes = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:3000',
+        'Access-Control-Request-Method': 'POST',
+      },
+    });
+    assert(
+      corsFrontendRes.status === 204 &&
+        corsFrontendRes.headers.get('access-control-allow-origin') === 'http://localhost:3000',
+      'CORS: Frontend origin (http://localhost:3000) permitted with preflight 204'
+    );
+
+    // 18. CORS Validation: Untrusted origin blocked with HTTP 403 (not 500)
+    const corsUntrustedRes = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        Origin: 'http://untrusted-malicious-site.com',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ identifier: 'ADMIN01', password: 'Walton@2026' }),
+    });
+    const corsUntrustedData: any = await corsUntrustedRes.json();
+    assert(
+      corsUntrustedRes.status === 403 && corsUntrustedData.errorCode === 'CORS_FORBIDDEN',
+      'CORS: Untrusted origin rejected with HTTP 403 Forbidden (not 500 Internal Error)'
+    );
+
     console.log(`\n========================================`);
     console.log(`📊 Test Results: ${passed} Passed, ${failed} Failed`);
     console.log(`========================================\n`);

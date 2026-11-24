@@ -63,6 +63,12 @@ export const errorHandler = (
     message = 'Malformed JSON payload in request body';
   }
 
+  // Handle CORS policy rejection errors
+  if (err.message && err.message.toLowerCase().includes('cors policy')) {
+    statusCode = 403;
+    errorCode = 'CORS_FORBIDDEN';
+  }
+
   // Log non-operational errors in development/production
   if (!err.isOperational && statusCode === 500) {
     console.error('[Unhandled Server Error]:', err);
