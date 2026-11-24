@@ -2,16 +2,6 @@
 ### Discrete Manufacturing Barcode Tracking & Lifecycle Management System
 **Industrial Attachment Assignment — Walton Hi-Tech Industries PLC**
 
-![Project Status](https://img.shields.io/badge/Project_Phase-Phase_4:_Development_Completed_(Day_10%2F10)-059669)
-![Build](https://img.shields.io/badge/Next.js-16.4.5_(Turbopack)-black)
-![Node](https://img.shields.io/badge/Node-v24+-334155)
-![Backend](https://img.shields.io/badge/Express-v5.3-blue)
-![Database](https://img.shields.io/badge/MongoDB-Atlas_Replica_Set-10b981)
-![Tests](https://img.shields.io/badge/Automated_Tests-10_Suites_|_220+_Assertions_Passing-emerald)
-![License](https://img.shields.io/badge/License-ISC-slate)
-
----
-
 ## 1. Executive Summary
 
 This project is a financial-grade, production-oriented **Barcode-Based Inventory Management System** built for discrete manufacturing plants (such as appliance manufacturing: refrigerators, air conditioners, compressors). 
